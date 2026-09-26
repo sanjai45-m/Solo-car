@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../services/game_controller.dart';
 import '../widgets/common/app_background.dart';
 import '../widgets/common/glass_container.dart';
+import '../widgets/common/jukebox_widget.dart';
 import '../widgets/common/neon_button.dart';
 import '../widgets/common/profile_badge.dart';
 import '../widgets/dialogs/auth_dialog.dart';
@@ -171,12 +172,14 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                           ),
                           const SizedBox(width: 10),
 
-                          // Status Badges (Profile, Daily Reward, Reputation & Cash)
+                          // Status Badges (Jukebox Player, Profile, Daily Reward, Reputation & Cash)
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                const JukeboxWidget(compact: true),
+                                const SizedBox(width: 8),
                                 ProfileBadge(
                                   profile: AuthService().currentUser ?? UserProfile.guest(),
                                   onTap: () {

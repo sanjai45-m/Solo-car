@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'save_service.dart';
 import 'soundtrack_generator.dart';
 
-class AudioService {
+class AudioService extends ChangeNotifier {
   static final AudioService _instance = AudioService._internal();
   factory AudioService() => _instance;
   AudioService._internal();
@@ -16,11 +17,12 @@ class AudioService {
   double _soundVolume = 0.8;
   double _musicVolume = 0.6;
   bool _isMusicPlaying = false;
-  String _currentTheme = '';
 
-  Uint8List? _cachedMenuMusic;
-  Uint8List? _cachedRaceMusic;
+  final Map<String, Uint8List> _trackCache = {};
+  int _currentTrackIndex = 0;
 
+  List<GameTrack> get playlist => GameTrack.allTracks;
+  GameTrack get currentTrack => GameTrack.allTracks[_currentTrackIndex];
   double get soundVolume => _soundVolume;
   double get musicVolume => _musicVolume;
   bool get isMusicPlaying => _isMusicPlaying;
@@ -35,12 +37,11 @@ class AudioService {
       await _musicPlayer.setVolume(_musicVolume);
       await _musicPlayer.setReleaseMode(ReleaseMode.loop);
 
-      // Pre-synthesize background music
-      _cachedMenuMusic ??= SoundtrackGenerator.generateMenuSoundtrack();
+      // Pre-synthesize default high-energy PS2/Tamil track
+      _trackCache[currentTrack.id] = SoundtrackGenerator.generateTrack(currentTrack.id);
 
-      // Start menu music automatically if volume is enabled
       if (_musicVolume > 0.05) {
-        playMenuMusic();
+        playTrack(currentTrack);
       }
     } catch (e) {
       debugPrint('AudioService init fallback: $e');
@@ -52,6 +53,7 @@ class AudioService {
     _sfxPlayer.setVolume(_soundVolume);
     _enginePlayer.setVolume(_soundVolume * 0.5);
     SaveService.setSoundVolume(_soundVolume);
+    notifyListeners();
   }
 
   void setMusicVolume(double vol) {
@@ -59,42 +61,77 @@ class AudioService {
     _musicPlayer.setVolume(_musicVolume);
     SaveService.setMusicVolume(_musicVolume);
     if (_musicVolume > 0.05 && !_isMusicPlaying) {
-      playMenuMusic();
+      playTrack(currentTrack);
     } else if (_musicVolume <= 0.01) {
       _musicPlayer.stop();
       _isMusicPlaying = false;
     }
+    notifyListeners();
   }
 
-  /// Plays the custom generated Synthwave Menu Soundtrack ("Neon Nightdrive")
-  Future<void> playMenuMusic() async {
-    if (_musicVolume <= 0.01 || _currentTheme == 'menu' && _isMusicPlaying) return;
+  /// Plays a specific soundtrack track
+  Future<void> playTrack(GameTrack track) async {
+    final index = GameTrack.allTracks.indexWhere((t) => t.id == track.id);
+    if (index != -1) {
+      _currentTrackIndex = index;
+    }
+
+    if (_musicVolume <= 0.01) {
+      _isMusicPlaying = false;
+      notifyListeners();
+      return;
+    }
+
     try {
-      _cachedMenuMusic ??= SoundtrackGenerator.generateMenuSoundtrack();
-      _currentTheme = 'menu';
+      if (!_trackCache.containsKey(track.id)) {
+        _trackCache[track.id] = SoundtrackGenerator.generateTrack(track.id);
+      }
+      final wavData = _trackCache[track.id]!;
+
+      await _musicPlayer.stop();
       await _musicPlayer.setReleaseMode(ReleaseMode.loop);
       await _musicPlayer.setVolume(_musicVolume);
-      await _musicPlayer.play(BytesSource(_cachedMenuMusic!));
+      await _musicPlayer.play(BytesSource(wavData));
       _isMusicPlaying = true;
-      debugPrint('🎵 Apex Synthwave Menu Soundtrack Playing!');
+      debugPrint('🎵 Now Playing: ${track.title} (${track.genre})');
+      notifyListeners();
     } catch (e) {
-      debugPrint('Menu music play note: $e');
+      debugPrint('Track play exception: $e');
     }
   }
 
-  /// Plays the high-octane procedural Race Soundtrack ("Apex Overdrive")
+  /// Skip to next track in playlist
+  void nextTrack() {
+    _currentTrackIndex = (_currentTrackIndex + 1) % GameTrack.allTracks.length;
+    playTrack(GameTrack.allTracks[_currentTrackIndex]);
+  }
+
+  /// Skip to previous track in playlist
+  void previousTrack() {
+    _currentTrackIndex = (_currentTrackIndex - 1 + GameTrack.allTracks.length) % GameTrack.allTracks.length;
+    playTrack(GameTrack.allTracks[_currentTrackIndex]);
+  }
+
+  /// Toggle Play / Pause
+  Future<void> togglePlayPause() async {
+    if (_isMusicPlaying) {
+      await _musicPlayer.pause();
+      _isMusicPlaying = false;
+    } else {
+      if (_musicVolume <= 0.05) {
+        setMusicVolume(0.6);
+      }
+      await playTrack(currentTrack);
+    }
+    notifyListeners();
+  }
+
+  /// Legacy methods for menu & race
+  Future<void> playMenuMusic() async => playTrack(currentTrack);
   Future<void> playRaceMusic() async {
-    if (_musicVolume <= 0.01 || _currentTheme == 'race' && _isMusicPlaying) return;
-    try {
-      _cachedRaceMusic ??= SoundtrackGenerator.generateRaceSoundtrack();
-      _currentTheme = 'race';
-      await _musicPlayer.setReleaseMode(ReleaseMode.loop);
-      await _musicPlayer.setVolume(_musicVolume);
-      await _musicPlayer.play(BytesSource(_cachedRaceMusic!));
-      _isMusicPlaying = true;
-      debugPrint('🏁 Apex Overdrive Race Music Playing!');
-    } catch (e) {
-      debugPrint('Race music play note: $e');
+    // If on default menu synth, switch to high-octane race theme or keep playing user selected song
+    if (currentTrack.id == 'neon_nightdrive') {
+      playTrack(GameTrack.allTracks.firstWhere((t) => t.id == 'ps2_smackdown_machi'));
     }
   }
 
@@ -102,7 +139,6 @@ class AudioService {
   Future<void> playButtonClick() async {
     if (_soundVolume <= 0.05) return;
     try {
-      // Immediate responsive click
       await _sfxPlayer.setVolume(_soundVolume * 0.8);
     } catch (_) {}
   }
@@ -163,7 +199,6 @@ class AudioService {
       _enginePlayer.stop();
       _musicPlayer.stop();
       _isMusicPlaying = false;
-      _currentTheme = '';
     } catch (_) {}
   }
 }

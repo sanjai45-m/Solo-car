@@ -8,6 +8,7 @@ import 'mobile_controls_overlay.dart';
 import 'nitro_gauge.dart';
 import 'race_position_badge.dart';
 import 'tachometer_speedometer.dart';
+import '../common/jukebox_widget.dart';
 
 class RacingHudOverlay extends StatefulWidget {
   final ApexRacingGame game;
@@ -141,7 +142,18 @@ class _RacingHudOverlayState extends State<RacingHudOverlay> {
           ),
         ),
 
-        // 2. Top Right: Mini Radar & Pause Button
+        // 2. Top Center: In-Race Jukebox Music Player
+        const Positioned(
+          top: 16,
+          left: 0,
+          right: 0,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: JukeboxWidget(compact: true),
+          ),
+        ),
+
+        // 3. Top Right: Mini Radar & Pause Button
         Positioned(
           top: 16,
           right: 20,
