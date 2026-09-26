@@ -161,8 +161,13 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.asset(
-                  'assets/images/app_logo_3d.jpg',
+                  'assets/images/app_logo_3d.png',
                   fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: const Color(0xFF0D1524),
+                    child: const Icon(Icons.sports_motorsports_rounded, color: Color(0xFF00E5FF), size: 24),
+                  ),
                 ),
               ),
             ),
