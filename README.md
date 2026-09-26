@@ -29,20 +29,20 @@ Designed from the ground up for a unified cross-platform experience:
 
 ## 📸 Visual Showcase & Screenshots
 
-### 🌌 3D Splash & High-Speed Action
-| 3D Splash Art & Background | Gameplay Race Track |
+### 🌌 Main Menu & High-Speed Gameplay
+| Main Menu (3D Emblem & Stats) | High-Speed Race Track & HUD |
 | :---: | :---: |
-| ![Splash Art](screenshots/splash_art.jpg) | ![Gameplay Race](screenshots/gameplay_race.png) |
+| ![Main Menu](screenshots/main_menu.png) | ![Gameplay Race](screenshots/gameplay_race.png) |
 
-### 📱 Mobile Landscape & Real-time Multiplayer
-| Mobile Landscape Responsive View | Real-Time Multiplayer Lobby |
+### 🚗 Cyberpunk Garage & Real-Time Multiplayer
+| Garage & Vehicle Customization | Real-Time Multiplayer Lobby |
 | :---: | :---: |
-| ![Mobile Landscape](screenshots/mobile_view.png) | ![Multiplayer Lobby](screenshots/multiplayer_lobby.png) |
+| ![Garage Customizer](screenshots/garage_customizer.png) | ![Multiplayer Lobby](screenshots/multiplayer_lobby.png) |
 
-### 🚗 Cyberpunk Garage & Vehicle Customization
-| Garage & Vehicle Selection |
-| :---: |
-| ![Garage Cars](screenshots/garage_cars.png) |
+### 🏎️ 3D Cinematic Artwork & Emblem
+| 3D App Emblem | 3D Cinematic Hypercar Art |
+| :---: | :---: |
+| ![3D Emblem](screenshots/app_logo.jpg) | ![3D Splash Art](screenshots/splash_art.jpg) |
 
 ---
 
