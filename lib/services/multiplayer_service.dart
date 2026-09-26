@@ -35,7 +35,8 @@ class MultiplayerService extends ChangeNotifier {
   void _connectWebSocket(String roomCode, String uid) {
     _disconnectWebSocket();
     try {
-      final wsUri = Uri.parse('ws://127.0.0.1:8088/ws');
+      // Connect to live Render 24/7 Cloud WebSocket Server
+      final wsUri = Uri.parse('wss://apex-velocity-server.onrender.com/ws');
       _wsChannel = WebSocketChannel.connect(wsUri);
       _wsSubscription = _wsChannel?.stream.listen(
         (message) {

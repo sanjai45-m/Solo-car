@@ -335,10 +335,10 @@ class NeonDatabaseService {
     bool liveApiDelivered = false;
     String? apiMessageId;
 
-    // 1. Dispatch via Apex Backend Mailer Service (runs seamlessly in background)
+    // 1. Dispatch via live Apex Cloud Backend on Render
     try {
       final backendResponse = await http.post(
-        Uri.parse('http://127.0.0.1:8088/api/send-email'),
+        Uri.parse('https://apex-velocity-server.onrender.com/api/send-email'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'recipientEmail': recipientEmail,
@@ -347,12 +347,12 @@ class NeonDatabaseService {
           'senderEmail': fromEmail,
           'trackName': trackName,
         }),
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(const Duration(seconds: 10));
 
       if (backendResponse.statusCode >= 200 && backendResponse.statusCode < 300) {
         liveApiDelivered = true;
         apiMessageId = 'backend_${DateTime.now().millisecondsSinceEpoch}';
-        debugPrint('  • BACKEND SERVICE       : ✅ DISPATCHED VIA BACKEND SERVER ON PORT 8088');
+        debugPrint('  • BACKEND SERVICE       : ✅ DISPATCHED VIA LIVE RENDER CLOUD SERVER');
       }
     } catch (_) {
       // 2. Direct SMTP Fallback if backend server is running in-process or on native
