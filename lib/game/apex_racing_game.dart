@@ -4,7 +4,10 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/car_model.dart';
+import '../models/multiplayer_room.dart';
 import '../models/race_model.dart';
+import '../services/auth_service.dart';
+import '../services/multiplayer_service.dart';
 import 'components/opponent_car.dart';
 import 'components/pickup_item.dart';
 import 'components/player_car.dart';
@@ -47,12 +50,13 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
   final math.Random _random = math.Random();
   double pickupSpawnTimer = 0.0;
   bool isInitialized = false;
-
   final bool enforceTrackBoundary;
+  final List<MultiplayerPlayerSlot>? multiplayerOpponents;
 
   ApexRacingGame({
     required this.carModel,
     required this.track,
+    this.multiplayerOpponents,
     this.enforceTrackBoundary = true,
     this.onPositionUpdate,
     this.onSpeedUpdate,
@@ -106,6 +110,28 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
 
   void _spawnOpponents() {
     opponents.clear();
+
+    // 1. If in real multiplayer lobby, spawn EXACT opponent player cars from lobby slots
+    if (multiplayerOpponents != null && multiplayerOpponents!.isNotEmpty) {
+      for (int i = 0; i < multiplayerOpponents!.length; i++) {
+        final slot = multiplayerOpponents![i];
+        final opponent = OpponentCar(
+          position: Vector2.zero(),
+          driverName: slot.displayName,
+          playerUid: slot.uid,
+          isRemoteMultiplayer: true,
+          difficulty: track.difficulty,
+          roadManager: roadManager,
+          startingGridIndex: i + 1,
+          color: slot.carColor,
+          underglowColor: slot.carColor,
+        );
+        opponents.add(opponent);
+      }
+      return;
+    }
+
+    // 2. Single-player / Practice AI fleet
     final rivalNames = [
       'Viper_99',
       'ApexPhantom',
@@ -142,6 +168,12 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
 
   void _initTrafficFleet() {
     trafficList.clear();
+
+    // In 2-player / multiplayer head-to-head duel, no computer cars or traffic
+    if (multiplayerOpponents != null && multiplayerOpponents!.isNotEmpty) {
+      return;
+    }
+
     final trafficTypes = TrafficType.values;
     final colors = [
       const Color(0xFFE0E0E0),
@@ -194,6 +226,41 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
     }
 
     playerCar.update(dt);
+
+    // 1. In multiplayer match, broadcast YOUR car position & sync opponent car positions
+    if (multiplayerOpponents != null && multiplayerOpponents!.isNotEmpty) {
+      final myUid = AuthService().currentUser?.uid ?? 'me';
+      MultiplayerService().updatePlayerTelemetry(
+        uid: myUid,
+        trackZ: playerCar.trackZ,
+        trackX: playerCar.trackX,
+        speedKmH: playerCar.speedKmH,
+        steering: playerCar.steeringAngle,
+        isNitro: playerCar.isNitroActive,
+      );
+
+      final room = MultiplayerService().currentRoom;
+      if (room != null) {
+        for (final opp in opponents) {
+          if (opp.isRemoteMultiplayer && opp.playerUid != null) {
+            final peerSlot = room.players.firstWhere(
+              (p) => p.uid == opp.playerUid,
+              orElse: () => room.players.first,
+            );
+            if (peerSlot.trackZ > 0 || peerSlot.speedKmH > 0 || peerSlot.trackX != 0) {
+              opp.updateRemoteTelemetry(
+                remoteZ: peerSlot.trackZ,
+                remoteX: peerSlot.trackX,
+                remoteSpeedKmH: peerSlot.speedKmH,
+                remoteSteering: peerSlot.steeringAngle,
+                remoteNitro: peerSlot.isNitroActive,
+              );
+            }
+          }
+        }
+      }
+    }
+
     for (final opp in opponents) {
       opp.update(dt);
     }

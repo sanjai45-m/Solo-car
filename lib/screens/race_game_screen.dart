@@ -2,6 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import '../game/apex_racing_game.dart';
 import '../models/car_model.dart';
+import '../models/multiplayer_room.dart';
 import '../models/race_model.dart';
 import '../services/audio_service.dart';
 import '../services/game_controller.dart';
@@ -14,12 +15,14 @@ class RaceGameScreen extends StatefulWidget {
   final GameController gameController;
   final CarModel carModel;
   final RaceTrack track;
+  final List<MultiplayerPlayerSlot>? multiplayerOpponents;
 
   const RaceGameScreen({
     super.key,
     required this.gameController,
     required this.carModel,
     required this.track,
+    this.multiplayerOpponents,
   });
 
   @override
@@ -38,7 +41,14 @@ class _RaceGameScreenState extends State<RaceGameScreen> {
   @override
   void initState() {
     super.initState();
+    AudioService().playRaceMusic();
     _initGame();
+  }
+
+  @override
+  void dispose() {
+    AudioService().playMenuMusic();
+    super.dispose();
   }
 
   void _initGame() {
@@ -48,6 +58,7 @@ class _RaceGameScreenState extends State<RaceGameScreen> {
     _game = ApexRacingGame(
       carModel: widget.carModel,
       track: widget.track,
+      multiplayerOpponents: widget.multiplayerOpponents,
       onPauseRequest: _togglePause,
       onRaceFinish: (pos, timeMs, cash) {
         if (!mounted || _isFinished) return;

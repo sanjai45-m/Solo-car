@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/race_model.dart';
+import '../models/user_profile.dart';
+import '../services/audio_service.dart';
+import '../services/auth_service.dart';
 import '../services/game_controller.dart';
+import '../widgets/common/app_background.dart';
 import '../widgets/common/glass_container.dart';
 import '../widgets/common/neon_button.dart';
+import '../widgets/common/profile_badge.dart';
+import '../widgets/dialogs/auth_dialog.dart';
+import '../widgets/dialogs/daily_reward_dialog.dart';
 import 'garage_screen.dart';
+import 'multiplayer_lobby_screen.dart';
 import 'race_game_screen.dart';
 import 'race_selection_screen.dart';
 import 'settings_screen.dart';
@@ -29,6 +37,9 @@ class _MainMenuScreenState extends State<MainMenuScreen>
       vsync: this,
       duration: const Duration(seconds: 4),
     )..repeat(reverse: true);
+
+    // Start authentic procedural Synthwave Menu Soundtrack
+    AudioService().playMenuMusic();
   }
 
   @override
@@ -48,8 +59,10 @@ class _MainMenuScreenState extends State<MainMenuScreen>
 
         return Scaffold(
           backgroundColor: const Color(0xFF070B12),
-          body: Stack(
-            children: [
+          body: AppBackground(
+            overlayOpacity: 0.72,
+            child: Stack(
+              children: [
               // 1. Cyberpunk Animated Background Elements
               AnimatedBuilder(
                 animation: _animController,
@@ -128,14 +141,68 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                           ),
                           const SizedBox(width: 10),
 
-                          // Status Badges (Reputation & Cash)
+                          // Status Badges (Profile, Daily Reward, Reputation & Cash)
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                ProfileBadge(
+                                  profile: AuthService().currentUser ?? UserProfile.guest(),
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) => AuthDialog(
+                                        onProfileChanged: () => setState(() {}),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+
+                                // 3D Daily Reward Crate Button
+                                GestureDetector(
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) => DailyRewardDialog(
+                                        gameController: widget.gameController,
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF131E33),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: const Color(0xFFFFD600), width: 1.2),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFFFFD600).withValues(alpha: 0.3),
+                                          blurRadius: 8,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.card_giftcard, color: Color(0xFFFFD600), size: 16),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'CRATE',
+                                          style: GoogleFonts.orbitron(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w900,
+                                            color: const Color(0xFFFFD600),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
                                     color: const Color(0x990A0E17),
                                     borderRadius: BorderRadius.circular(10),
@@ -144,9 +211,9 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                                   child: Row(
                                     children: [
                                       const Icon(Icons.star, color: Color(0xFFFFD600), size: 16),
-                                      const SizedBox(width: 5),
+                                      const SizedBox(width: 4),
                                       Text(
-                                        'REP LVL $repLevel',
+                                        'REP $repLevel',
                                         style: GoogleFonts.orbitron(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w800,
@@ -156,9 +223,10 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 10),
+                                const SizedBox(width: 8),
+
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
                                     color: const Color(0x990A0E17),
                                     borderRadius: BorderRadius.circular(10),
@@ -167,11 +235,11 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                                   child: Row(
                                     children: [
                                       const Icon(Icons.monetization_on, color: Color(0xFF00E676), size: 16),
-                                      const SizedBox(width: 5),
+                                      const SizedBox(width: 4),
                                       Text(
                                         '\$$cash',
                                         style: GoogleFonts.orbitron(
-                                          fontSize: 13,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.w900,
                                           color: const Color(0xFF00E676),
                                         ),
@@ -200,11 +268,11 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       NeonButton(
-                                        text: 'Quick Race',
+                                        text: 'Quick Race (AI)',
                                         icon: Icons.play_arrow,
                                         width: 220,
-                                        height: 48,
-                                        fontSize: 14,
+                                        height: 46,
+                                        fontSize: 13,
                                         primaryColor: const Color(0xFF00E5FF),
                                         onPressed: () {
                                           Navigator.push(
@@ -219,13 +287,33 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                                           );
                                         },
                                       ),
-                                      const SizedBox(height: 12),
+                                      const SizedBox(height: 10),
+                                      NeonButton(
+                                        text: 'Online Race',
+                                        icon: Icons.public,
+                                        width: 220,
+                                        height: 46,
+                                        fontSize: 13,
+                                        isSecondary: false,
+                                        primaryColor: const Color(0xFF00E676),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => MultiplayerLobbyScreen(
+                                                gameController: widget.gameController,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      const SizedBox(height: 10),
                                       NeonButton(
                                         text: 'Career Tracks',
                                         icon: Icons.flag,
                                         width: 220,
-                                        height: 44,
-                                        fontSize: 13,
+                                        height: 42,
+                                        fontSize: 12,
                                         isSecondary: true,
                                         primaryColor: const Color(0xFFFFD600),
                                         onPressed: () {
@@ -239,13 +327,13 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                                           );
                                         },
                                       ),
-                                      const SizedBox(height: 12),
+                                      const SizedBox(height: 10),
                                       NeonButton(
                                         text: 'Garage & Tuning',
                                         icon: Icons.build,
                                         width: 220,
-                                        height: 44,
-                                        fontSize: 13,
+                                        height: 42,
+                                        fontSize: 12,
                                         isSecondary: true,
                                         primaryColor: const Color(0xFFFF007F),
                                         onPressed: () {
@@ -259,13 +347,13 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                                           );
                                         },
                                       ),
-                                      const SizedBox(height: 12),
+                                      const SizedBox(height: 10),
                                       NeonButton(
                                         text: 'Settings',
                                         icon: Icons.settings,
                                         width: 220,
-                                        height: 44,
-                                        fontSize: 13,
+                                        height: 42,
+                                        fontSize: 12,
                                         isSecondary: true,
                                         primaryColor: const Color(0xFF90A4AE),
                                         onPressed: () {
@@ -373,9 +461,10 @@ class _MainMenuScreenState extends State<MainMenuScreen>
               ),
             ],
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 
   Widget _buildStatBar(String label, double ratio, String valueText) {

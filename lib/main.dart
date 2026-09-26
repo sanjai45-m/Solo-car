@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'screens/main_menu_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/audio_service.dart';
+import 'services/auth_service.dart';
 import 'services/game_controller.dart';
+import 'widgets/common/landscape_guard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +23,7 @@ void main() async {
   final gameController = GameController();
   await gameController.init();
   await AudioService().init();
+  await AuthService().init();
 
   runApp(ApexVelocityApp(gameController: gameController));
 }
@@ -48,7 +51,8 @@ class ApexVelocityApp extends StatelessWidget {
           ThemeData.dark().textTheme,
         ),
       ),
-      home: MainMenuScreen(gameController: gameController),
+      builder: (context, child) => LandscapeGuard(child: child ?? const SizedBox.shrink()),
+      home: SplashScreen(gameController: gameController),
     );
   }
 }

@@ -149,7 +149,9 @@ class _ControlButtonState extends State<_ControlButton> {
 
   @override
   Widget build(BuildContext context) {
-    final scale = _isPressed ? 0.92 : 1.0;
+    const double depth = 5.0;
+    final double yOffset = _isPressed ? depth : 0.0;
+
     return GestureDetector(
       onTapDown: (_) {
         setState(() => _isPressed = true);
@@ -163,49 +165,100 @@ class _ControlButtonState extends State<_ControlButton> {
         setState(() => _isPressed = false);
         widget.onPressEnd();
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
+      child: SizedBox(
         width: widget.size,
-        height: widget.size,
-        transform: Matrix4.diagonal3Values(scale, scale, 1.0),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: _isPressed
-              ? widget.color.withValues(alpha: 0.6)
-              : const Color(0x990A0E17),
-          border: Border.all(
-            color: widget.color.withValues(alpha: _isPressed ? 1.0 : 0.6),
-            width: 2,
-          ),
-          boxShadow: [
-            if (_isPressed)
-              BoxShadow(
-                color: widget.color.withValues(alpha: 0.6),
-                blurRadius: 16,
-                spreadRadius: 2,
+        height: widget.size + depth,
+        child: Stack(
+          alignment: Alignment.topCenter,
+          children: [
+            // 3D Bottom Base Bevel
+            Positioned(
+              bottom: 0,
+              child: Container(
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.color.withValues(alpha: 0.25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: widget.color.withValues(alpha: _isPressed ? 0.8 : 0.35),
+                      blurRadius: _isPressed ? 18 : 8,
+                      spreadRadius: _isPressed ? 3 : 1,
+                      offset: const Offset(0, 4),
+                    ),
+                    const BoxShadow(
+                      color: Color(0x99000000),
+                      blurRadius: 6,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
               ),
-          ],
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                widget.icon,
-                color: _isPressed ? Colors.black : widget.color,
-                size: widget.size * 0.42,
-              ),
-              if (widget.label != null)
-                Text(
-                  widget.label!,
-                  style: TextStyle(
-                    fontSize: 8,
-                    fontWeight: FontWeight.w900,
-                    color: _isPressed ? Colors.black : widget.color,
+            ),
+
+            // 3D Top Cap (Translates down when pressed)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 60),
+              curve: Curves.easeOutCubic,
+              top: yOffset,
+              left: 0,
+              right: 0,
+              child: Container(
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: _isPressed
+                        ? [
+                            widget.color.withValues(alpha: 0.9),
+                            widget.color.withValues(alpha: 0.6),
+                          ]
+                        : [
+                            const Color(0xFF1E2838),
+                            const Color(0xFF0C1322),
+                          ],
+                  ),
+                  border: Border.all(
+                    color: _isPressed ? Colors.white : widget.color.withValues(alpha: 0.7),
+                    width: _isPressed ? 2.5 : 1.8,
                   ),
                 ),
-            ],
-          ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        widget.icon,
+                        color: _isPressed ? Colors.black : widget.color,
+                        size: widget.size * 0.42,
+                        shadows: [
+                          if (!_isPressed)
+                            Shadow(
+                              color: widget.color.withValues(alpha: 0.8),
+                              blurRadius: 8,
+                            ),
+                        ],
+                      ),
+                      if (widget.label != null)
+                        Text(
+                          widget.label!,
+                          style: TextStyle(
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.8,
+                            color: _isPressed ? Colors.black : widget.color,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

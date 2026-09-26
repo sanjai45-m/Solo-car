@@ -29,8 +29,39 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>apex_velocity</title>
+  <title>Apex Velocity: 3D Arcade Racing</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Responsive Viewport & Orientation Lock -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="screen-orientation" content="landscape">
+  <meta name="x5-orientation" content="landscape">
+
+  <!-- Google Sign-In OAuth Web Client ID -->
+  <meta name="google-signin-client_id" content="638423180265-gsh54ui9q2dqshrtp6ubtc7qo4dt8t2j.apps.googleusercontent.com">
+
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #070B12;
+      overflow: hidden;
+    }
+  </style>
+
+  <script>
+    function lockLandscape() {
+      try {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(function() {});
+        }
+      } catch (e) {}
+    }
+    window.addEventListener('touchstart', lockLandscape, { passive: true });
+    window.addEventListener('click', lockLandscape, { passive: true });
+  </script>
 </head>
 <body>
   <!--

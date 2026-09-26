@@ -107,6 +107,18 @@ class GameController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void addCash(int amount) {
+    _progress = _progress.copyWith(cash: _progress.cash + amount);
+    SaveService.saveProgress(_progress);
+    notifyListeners();
+  }
+
+  void addReputation(int amount) {
+    _progress = _progress.copyWith(reputationLevel: _progress.reputationLevel + amount);
+    SaveService.saveProgress(_progress);
+    notifyListeners();
+  }
+
   void recordRaceResult({
     required RaceTrack track,
     required int finishPosition,

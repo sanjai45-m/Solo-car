@@ -6,6 +6,8 @@ import 'road_manager.dart';
 
 class OpponentCar extends CarBase {
   final String driverName;
+  final String? playerUid;
+  final bool isRemoteMultiplayer;
   final RaceDifficulty difficulty;
   final RoadManager roadManager;
   final int startingGridIndex;
@@ -16,9 +18,19 @@ class OpponentCar extends CarBase {
   double distanceDrivenMeters = 0.0;
   final math.Random _random = math.Random();
 
+  // Remote player interpolation targets
+  double targetRemoteZ = 0.0;
+  double targetRemoteX = 0.0;
+  double targetRemoteSpeed = 0.0;
+  double targetRemoteSteering = 0.0;
+  bool targetRemoteNitro = false;
+  bool hasReceivedFirstTelemetry = false;
+
   OpponentCar({
     required super.position,
     required this.driverName,
+    this.playerUid,
+    this.isRemoteMultiplayer = false,
     required this.difficulty,
     required this.roadManager,
     required this.startingGridIndex,
@@ -29,12 +41,14 @@ class OpponentCar extends CarBase {
           neonGlowColor: underglowColor,
           hasUnderglow: true,
         ) {
-    // Place opponents in realistic starting grid slots in front of player
+    // Place opponents in starting grid slots in front/beside player
     trackZ = 120.0 + (startingGridIndex * 140.0);
     // Staggered grid slots: Left (-0.45), Right (0.45), Left-center (-0.28), Right-center (0.28)
     final gridSlots = [-0.45, 0.45, -0.28, 0.28, -0.58, 0.58];
     trackX = gridSlots[(startingGridIndex - 1) % gridSlots.length];
     targetTrackX = trackX;
+    targetRemoteZ = trackZ;
+    targetRemoteX = trackX;
 
     switch (difficulty) {
       case RaceDifficulty.easy:
@@ -56,11 +70,51 @@ class OpponentCar extends CarBase {
     }
   }
 
+  void updateRemoteTelemetry({
+    required double remoteZ,
+    required double remoteX,
+    required double remoteSpeedKmH,
+    required double remoteSteering,
+    required bool remoteNitro,
+  }) {
+    hasReceivedFirstTelemetry = true;
+    targetRemoteZ = remoteZ;
+    targetRemoteX = remoteX;
+    targetRemoteSpeed = remoteSpeedKmH;
+    targetRemoteSteering = remoteSteering;
+    targetRemoteNitro = remoteNitro;
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
 
-    // AI Tactical Decision Making
+    // 1. Remote Live Human Opponent (Controlled via Real-Time WebSocket)
+    if (isRemoteMultiplayer) {
+      if (hasReceivedFirstTelemetry) {
+        // High-precision smooth network interpolation for live peer racer
+        trackZ = trackZ + (targetRemoteZ - trackZ) * (18.0 * dt).clamp(0.0, 1.0);
+        trackX = trackX + (targetRemoteX - trackX) * (20.0 * dt).clamp(0.0, 1.0);
+        speedKmH = targetRemoteSpeed;
+        speed = speedKmH * 32.0;
+        steeringAngle = targetRemoteSteering;
+        isNitroActive = targetRemoteNitro;
+        distanceDrivenMeters = trackZ / 32.0;
+      } else {
+        // Starting roll on grid
+        speedKmH = 40.0;
+        speed = speedKmH * 32.0;
+        trackZ += speed * dt;
+        distanceDrivenMeters += (speed * dt) / 32.0;
+      }
+
+      if (trackZ >= roadManager.trackLength && roadManager.trackLength > 0) {
+        trackZ -= roadManager.trackLength;
+      }
+      return;
+    }
+
+    // 2. AI Bot tactical decision making (Single player)
     aiDecisionTimer += dt;
     if (aiDecisionTimer > 1.4 + _random.nextDouble() * 1.5) {
       aiDecisionTimer = 0.0;

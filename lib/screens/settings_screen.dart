@@ -4,6 +4,7 @@ import '../models/player_progress.dart';
 import '../services/audio_service.dart';
 import '../services/game_controller.dart';
 import '../services/save_service.dart';
+import '../widgets/common/app_background.dart';
 import '../widgets/common/glass_container.dart';
 import '../widgets/common/neon_button.dart';
 
@@ -32,8 +33,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E17),
-      body: Stack(
-        children: [
+      body: AppBackground(
+        overlayOpacity: 0.80,
+        child: Stack(
+          children: [
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
@@ -162,8 +165,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildControlOption(String title, String key) {
     final isSelected = _controlMode == key;
@@ -173,14 +177,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
           setState(() => _controlMode = key);
           SaveService.setControlMode(key);
         },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF00E5FF).withValues(alpha: 0.2) : const Color(0x66101B2B),
-            borderRadius: BorderRadius.circular(8),
+            color: isSelected ? const Color(0xFF00E5FF).withValues(alpha: 0.22) : const Color(0xFF10192A),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isSelected ? const Color(0xFF00E5FF) : Colors.white24,
+              color: isSelected ? const Color(0xFF00E5FF) : Colors.white12,
+              width: isSelected ? 1.8 : 1.0,
             ),
+            boxShadow: [
+              if (isSelected)
+                BoxShadow(
+                  color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                )
+              else
+                const BoxShadow(
+                  color: Color(0x66000000),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+            ],
           ),
           child: Center(
             child: Text(
@@ -188,6 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: GoogleFonts.orbitron(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
                 color: isSelected ? const Color(0xFF00E5FF) : Colors.white60,
               ),
             ),

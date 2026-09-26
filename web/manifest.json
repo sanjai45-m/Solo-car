@@ -1,12 +1,12 @@
 {
-    "name": "apex_velocity",
-    "short_name": "apex_velocity",
+    "name": "Apex Velocity: 3D Arcade Racing",
+    "short_name": "Apex Velocity",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#070B12",
+    "theme_color": "#00E5FF",
+    "description": "High-octane 3D cyberpunk drift arcade racing game with real-time multiplayer.",
+    "orientation": "landscape",
     "prefer_related_applications": false,
     "icons": [
         {

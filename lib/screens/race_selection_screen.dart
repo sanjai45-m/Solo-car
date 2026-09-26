@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/race_model.dart';
 import '../services/game_controller.dart';
+import '../widgets/common/app_background.dart';
 import '../widgets/common/glass_container.dart';
 import '../widgets/common/neon_button.dart';
 import 'race_game_screen.dart';
@@ -30,8 +31,10 @@ class _RaceSelectionScreenState extends State<RaceSelectionScreen> {
 
         return Scaffold(
           backgroundColor: const Color(0xFF0A0E17),
-          body: Stack(
-            children: [
+          body: AppBackground(
+            overlayOpacity: 0.76,
+            child: Stack(
+              children: [
               // Ambient Environment Glow
               Positioned(
                 bottom: -80,
@@ -124,16 +127,37 @@ class _RaceSelectionScreenState extends State<RaceSelectionScreen> {
 
                                 return GestureDetector(
                                   onTap: () => setState(() => _selectedTrackIndex = idx),
-                                  child: Container(
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 160),
                                     margin: const EdgeInsets.only(bottom: 12),
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: isSelected ? const Color(0xCC152234) : const Color(0x660E1624),
+                                      color: isSelected ? const Color(0xE6152238) : const Color(0x990E1624),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: isSelected ? const Color(0xFF00E5FF) : Colors.white12,
-                                        width: isSelected ? 1.5 : 1.0,
+                                        width: isSelected ? 1.8 : 1.0,
                                       ),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
+                                                blurRadius: 12,
+                                                offset: const Offset(0, 3),
+                                              ),
+                                              const BoxShadow(
+                                                color: Color(0x66000000),
+                                                blurRadius: 6,
+                                                offset: Offset(0, 4),
+                                              ),
+                                            ]
+                                          : const [
+                                              BoxShadow(
+                                                color: Color(0x55000000),
+                                                blurRadius: 4,
+                                                offset: Offset(0, 2),
+                                              ),
+                                            ],
                                     ),
                                     child: Row(
                                       children: [
@@ -356,9 +380,10 @@ class _RaceSelectionScreenState extends State<RaceSelectionScreen> {
               ),
             ],
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 
   Widget _buildSpecItem(String label, String value, IconData icon, {Color? valueColor}) {

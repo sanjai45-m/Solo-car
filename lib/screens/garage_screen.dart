@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/car_model.dart';
 import '../services/game_controller.dart';
+import '../widgets/common/app_background.dart';
 import '../widgets/common/glass_container.dart';
 import '../widgets/common/neon_button.dart';
 
@@ -50,8 +51,10 @@ class _GarageScreenState extends State<GarageScreen> {
 
         return Scaffold(
           backgroundColor: const Color(0xFF0A0E17),
-          body: Stack(
-            children: [
+          body: AppBackground(
+            overlayOpacity: 0.78,
+            child: Stack(
+              children: [
               // Ambient Neon Background Glow
               Positioned(
                 top: -100,
@@ -295,30 +298,48 @@ class _GarageScreenState extends State<GarageScreen> {
               ),
             ],
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 
   Widget _buildTabButton(String title, int index) {
     final isActive = _activeTab == index;
     return GestureDetector(
       onTap: () => setState(() => _activeTab = index),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF00E5FF).withValues(alpha: 0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: isActive ? const Color(0xFF00E5FF).withValues(alpha: 0.2) : const Color(0xFF101726),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isActive ? const Color(0xFF00E5FF) : Colors.white24,
+            color: isActive ? const Color(0xFF00E5FF) : Colors.white12,
+            width: isActive ? 1.8 : 1.0,
           ),
+          boxShadow: [
+            if (isActive)
+              BoxShadow(
+                color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
+              )
+            else
+              const BoxShadow(
+                color: Color(0x66000000),
+                blurRadius: 4,
+                offset: Offset(0, 3),
+              ),
+          ],
         ),
         child: Text(
           title,
           style: GoogleFonts.orbitron(
             fontSize: 12,
-            fontWeight: FontWeight.w800,
-            color: isActive ? const Color(0xFF00E5FF) : Colors.white60,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.8,
+            color: isActive ? const Color(0xFF00E5FF) : Colors.white54,
           ),
         ),
       ),
@@ -398,11 +419,23 @@ class _GarageScreenState extends State<GarageScreen> {
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0x66101B2B),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white12),
+        color: const Color(0xE610192A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0x3300E5FF), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x88000000),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Color(0x1A00E5FF),
+            blurRadius: 4,
+            offset: Offset(0, -1),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -439,16 +472,16 @@ class _GarageScreenState extends State<GarageScreen> {
                     final isFilled = idx < level;
                     return Expanded(
                       child: Container(
-                        height: 6,
+                        height: 7,
                         margin: const EdgeInsets.symmetric(horizontal: 2),
                         decoration: BoxDecoration(
-                          color: isFilled ? const Color(0xFF00E5FF) : const Color(0xFF263238),
-                          borderRadius: BorderRadius.circular(2),
+                          color: isFilled ? const Color(0xFF00E5FF) : const Color(0xFF1E2838),
+                          borderRadius: BorderRadius.circular(3),
                           boxShadow: isFilled
                               ? [
                                   BoxShadow(
                                     color: const Color(0xFF00E5FF).withValues(alpha: 0.6),
-                                    blurRadius: 4,
+                                    blurRadius: 6,
                                   ),
                                 ]
                               : null,
