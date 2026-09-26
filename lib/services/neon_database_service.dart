@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 import '../models/multiplayer_room.dart';
+import '../models/player_progress.dart';
 import '../models/user_profile.dart';
 
 class NeonDatabaseService {
@@ -84,12 +85,149 @@ class NeonDatabaseService {
       );
     ''';
 
+    final createProgressTable = '''
+      CREATE TABLE IF NOT EXISTS racer_game_progress (
+        uid VARCHAR(128) PRIMARY KEY,
+        cash INT DEFAULT 5000,
+        reputation_level INT DEFAULT 1,
+        selected_car_id VARCHAR(64) DEFAULT 'phantom_gt',
+        unlocked_cars_json JSONB DEFAULT '["phantom_gt"]',
+        unlocked_tracks_json JSONB DEFAULT '["track_city_night"]',
+        track_best_times_json JSONB DEFAULT '{}',
+        car_upgrades_json JSONB DEFAULT '{}',
+        car_colors_json JSONB DEFAULT '{}',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    ''';
+
     await query(createRacerTable);
     await query(createLobbyTable);
     await query(createMatchTable);
+    await query(createProgressTable);
 
     _isInitialized = true;
     debugPrint('🏎️ Neon Database schema initialized successfully!');
+  }
+
+  /// Fetches authoritative game progression for a specific user ID from Neon Cloud DB
+  Future<PlayerProgress?> fetchUserProgress(String uid) async {
+    if (uid.isEmpty) return null;
+    final sanitizedUid = uid.replaceAll("'", "''");
+    try {
+      final sql = '''
+        SELECT uid, cash, reputation_level, selected_car_id, unlocked_cars_json, 
+               unlocked_tracks_json, track_best_times_json, car_upgrades_json, car_colors_json
+        FROM racer_game_progress
+        WHERE uid = '$sanitizedUid'
+        LIMIT 1;
+      ''';
+      final res = await query(sql);
+      if (res != null &&
+          res is Map &&
+          res.containsKey('rows') &&
+          (res['rows'] as List).isNotEmpty) {
+        final row = (res['rows'] as List).first as Map<String, dynamic>;
+
+        dynamic parseJsonField(dynamic val, dynamic fallback) {
+          if (val == null) return fallback;
+          if (val is String) {
+            try {
+              return jsonDecode(val);
+            } catch (_) {
+              return fallback;
+            }
+          }
+          return val;
+        }
+
+        final unlockedCars = (parseJsonField(row['unlocked_cars_json'], ['phantom_gt']) as List<dynamic>)
+            .map((e) => e.toString())
+            .toList();
+
+        final unlockedTracks = (parseJsonField(row['unlocked_tracks_json'], ['track_city_night']) as List<dynamic>)
+            .map((e) => e.toString())
+            .toList();
+
+        final rawBestTimes = parseJsonField(row['track_best_times_json'], <String, dynamic>{}) as Map<String, dynamic>;
+        final trackBestTimes = rawBestTimes.map((k, v) => MapEntry(k, (v as num).toInt()));
+
+        final rawUpgrades = parseJsonField(row['car_upgrades_json'], <String, dynamic>{}) as Map<String, dynamic>;
+        final carUpgrades = rawUpgrades.map((k, v) {
+          if (v is Map) {
+            return MapEntry(
+              k,
+              v.map((uk, uv) => MapEntry(uk.toString(), (uv as num).toInt())),
+            );
+          }
+          return MapEntry(k, <String, int>{});
+        });
+
+        final rawColors = parseJsonField(row['car_colors_json'], <String, dynamic>{}) as Map<String, dynamic>;
+        final carColors = rawColors.map((k, v) => MapEntry(k, (v as num).toInt()));
+
+        return PlayerProgress(
+          cash: (row['cash'] as num?)?.toInt() ?? 5000,
+          reputationLevel: (row['reputation_level'] as num?)?.toInt() ?? 1,
+          selectedCarId: row['selected_car_id'] as String? ?? 'phantom_gt',
+          unlockedCarIds: unlockedCars.isNotEmpty ? unlockedCars : const ['phantom_gt'],
+          unlockedTrackIds: unlockedTracks.isNotEmpty ? unlockedTracks : const ['track_city_night'],
+          trackBestTimesMs: trackBestTimes,
+          carUpgradeLevels: carUpgrades,
+          carColors: carColors,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error fetching user cloud progress: $e');
+    }
+    return null;
+  }
+
+  /// Atomically saves / updates game progression for a specific user ID in Neon Cloud DB
+  Future<bool> saveUserProgress(String uid, PlayerProgress progress) async {
+    if (uid.isEmpty) return false;
+    final sanitizedUid = uid.replaceAll("'", "''");
+    final sanitizedSelectedCar = progress.selectedCarId.replaceAll("'", "''");
+    final unlockedCarsJson = jsonEncode(progress.unlockedCarIds).replaceAll("'", "''");
+    final unlockedTracksJson = jsonEncode(progress.unlockedTrackIds).replaceAll("'", "''");
+    final trackBestTimesJson = jsonEncode(progress.trackBestTimesMs).replaceAll("'", "''");
+    final carUpgradesJson = jsonEncode(progress.carUpgradeLevels).replaceAll("'", "''");
+    final carColorsJson = jsonEncode(progress.carColors).replaceAll("'", "''");
+
+    try {
+      final sql = '''
+        INSERT INTO racer_game_progress (
+          uid, cash, reputation_level, selected_car_id, 
+          unlocked_cars_json, unlocked_tracks_json, 
+          track_best_times_json, car_upgrades_json, car_colors_json, updated_at
+        ) VALUES (
+          '$sanitizedUid',
+          ${progress.cash},
+          ${progress.reputationLevel},
+          '$sanitizedSelectedCar',
+          '$unlockedCarsJson',
+          '$unlockedTracksJson',
+          '$trackBestTimesJson',
+          '$carUpgradesJson',
+          '$carColorsJson',
+          CURRENT_TIMESTAMP
+        )
+        ON CONFLICT (uid) DO UPDATE SET
+          cash = EXCLUDED.cash,
+          reputation_level = EXCLUDED.reputation_level,
+          selected_car_id = EXCLUDED.selected_car_id,
+          unlocked_cars_json = EXCLUDED.unlocked_cars_json,
+          unlocked_tracks_json = EXCLUDED.unlocked_tracks_json,
+          track_best_times_json = EXCLUDED.track_best_times_json,
+          car_upgrades_json = EXCLUDED.car_upgrades_json,
+          car_colors_json = EXCLUDED.car_colors_json,
+          updated_at = CURRENT_TIMESTAMP;
+      ''';
+      final res = await query(sql);
+      return res != null;
+    } catch (e) {
+      debugPrint('Error saving user cloud progress: $e');
+      return false;
+    }
   }
 
   /// Backend Google Authentication & Profile Sync Endpoint

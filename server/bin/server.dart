@@ -116,9 +116,146 @@ void main() async {
       continue;
     }
 
+    // 4. User Game Progress Fetch (GET /api/user/progress?uid=...)
+    if (request.method == 'GET' && request.uri.path == '/api/user/progress') {
+      final uid = request.uri.queryParameters['uid'] ?? '';
+      if (uid.isEmpty) {
+        request.response.statusCode = HttpStatus.badRequest;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'success': false, 'error': 'Missing uid parameter'}));
+        await request.response.close();
+        continue;
+      }
+
+      try {
+        final neonRes = await _queryNeon(
+          "SELECT * FROM racer_game_progress WHERE uid = '${uid.replaceAll("'", "''")}' LIMIT 1;"
+        );
+        request.response.statusCode = HttpStatus.ok;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({
+          'success': true,
+          'uid': uid,
+          'data': (neonRes is Map && neonRes.containsKey('rows') && (neonRes['rows'] as List).isNotEmpty)
+              ? (neonRes['rows'] as List).first
+              : null,
+        }));
+        await request.response.close();
+      } catch (e) {
+        request.response.statusCode = HttpStatus.internalServerError;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'success': false, 'error': e.toString()}));
+        await request.response.close();
+      }
+      continue;
+    }
+
+    // 5. User Game Progress Save / Sync (POST /api/user/progress)
+    if (request.method == 'POST' && request.uri.path == '/api/user/progress') {
+      try {
+        final content = await utf8.decoder.bind(request).join();
+        final body = jsonDecode(content) as Map<String, dynamic>;
+        final uid = body['uid'] as String? ?? '';
+        final progress = body['progress'] as Map<String, dynamic>? ?? {};
+
+        if (uid.isEmpty) {
+          request.response.statusCode = HttpStatus.badRequest;
+          request.response.headers.contentType = ContentType.json;
+          request.response.write(jsonEncode({'success': false, 'error': 'Missing uid'}));
+          await request.response.close();
+          continue;
+        }
+
+        final sanitizedUid = uid.replaceAll("'", "''");
+        final cash = progress['cash'] ?? 5000;
+        final rep = progress['reputationLevel'] ?? 1;
+        final selectedCar = (progress['selectedCarId'] ?? 'phantom_gt').toString().replaceAll("'", "''");
+        final unlockedCars = jsonEncode(progress['unlockedCarIds'] ?? ['phantom_gt']).replaceAll("'", "''");
+        final unlockedTracks = jsonEncode(progress['unlockedTrackIds'] ?? ['track_city_night']).replaceAll("'", "''");
+        final bestTimes = jsonEncode(progress['trackBestTimesMs'] ?? {}).replaceAll("'", "''");
+        final upgrades = jsonEncode(progress['carUpgradeLevels'] ?? {}).replaceAll("'", "''");
+        final colors = jsonEncode(progress['carColors'] ?? {}).replaceAll("'", "''");
+
+        final sql = '''
+          INSERT INTO racer_game_progress (
+            uid, cash, reputation_level, selected_car_id, 
+            unlocked_cars_json, unlocked_tracks_json, 
+            track_best_times_json, car_upgrades_json, car_colors_json, updated_at
+          ) VALUES (
+            '$sanitizedUid', $cash, $rep, '$selectedCar', 
+            '$unlockedCars', '$unlockedTracks', '$bestTimes', 
+            '$upgrades', '$colors', CURRENT_TIMESTAMP
+          )
+          ON CONFLICT (uid) DO UPDATE SET
+            cash = EXCLUDED.cash,
+            reputation_level = EXCLUDED.reputation_level,
+            selected_car_id = EXCLUDED.selected_car_id,
+            unlocked_cars_json = EXCLUDED.unlocked_cars_json,
+            unlocked_tracks_json = EXCLUDED.unlocked_tracks_json,
+            track_best_times_json = EXCLUDED.track_best_times_json,
+            car_upgrades_json = EXCLUDED.car_upgrades_json,
+            car_colors_json = EXCLUDED.car_colors_json,
+            updated_at = CURRENT_TIMESTAMP;
+        ''';
+
+        await _queryNeon(sql);
+
+        request.response.statusCode = HttpStatus.ok;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'success': true, 'message': 'Progress saved for $uid'}));
+        await request.response.close();
+      } catch (e) {
+        request.response.statusCode = HttpStatus.internalServerError;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'success': false, 'error': e.toString()}));
+        await request.response.close();
+      }
+      continue;
+    }
+
+    // 6. User Logout / Session Clear (POST /api/user/logout)
+    if (request.method == 'POST' && request.uri.path == '/api/user/logout') {
+      try {
+        final content = await utf8.decoder.bind(request).join();
+        final body = (content.isNotEmpty ? jsonDecode(content) : {}) as Map<String, dynamic>;
+        final uid = body['uid'] as String? ?? '';
+
+        print('🔒 [BACKEND SERVER USER LOGOUT] UID: $uid');
+        request.response.statusCode = HttpStatus.ok;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'success': true, 'message': 'Session purged successfully'}));
+        await request.response.close();
+      } catch (e) {
+        request.response.statusCode = HttpStatus.ok;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(jsonEncode({'success': true}));
+        await request.response.close();
+      }
+      continue;
+    }
+
     request.response.statusCode = HttpStatus.notFound;
     await request.response.close();
   }
+}
+
+Future<dynamic> _queryNeon(String sql) async {
+  final client = HttpClient();
+  try {
+    final req = await client.postUrl(Uri.parse('https://ep-broad-mode-b508714t-pooler.c-7.us-east-2.aws.neon.tech/sql'));
+    req.headers.contentType = ContentType.json;
+    req.headers.set('Neon-Connection-String', 'postgresql://neondb_owner:npg_JvwEDnZ2Ih3K@ep-broad-mode-b508714t-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require');
+    req.write(jsonEncode({'query': sql}));
+    final resp = await req.close();
+    final body = await utf8.decoder.bind(resp).join();
+    if (resp.statusCode >= 200 && resp.statusCode < 300) {
+      return jsonDecode(body);
+    }
+  } catch (_) {
+  } finally {
+    client.close();
+  }
+  return null;
 }
 
 /// Handle real-time WebSocket client connection

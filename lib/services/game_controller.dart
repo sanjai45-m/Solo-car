@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/car_model.dart';
 import '../models/player_progress.dart';
 import '../models/race_model.dart';
+import 'neon_database_service.dart';
 import 'save_service.dart';
 
 class GameController extends ChangeNotifier {
@@ -9,11 +10,13 @@ class GameController extends ChangeNotifier {
   List<CarModel> _allCars = CarModel.stockCars;
   RaceTrack _selectedTrack = RaceTrack.defaultTracks.first;
   bool _isInitialized = false;
+  String? _currentUid;
 
   PlayerProgress get progress => _progress;
   List<CarModel> get allCars => _allCars;
   RaceTrack get selectedTrack => _selectedTrack;
   bool get isInitialized => _isInitialized;
+  String? get currentUid => _currentUid;
 
   CarModel get currentCar {
     final car = _allCars.firstWhere(
@@ -23,11 +26,57 @@ class GameController extends ChangeNotifier {
     return car;
   }
 
-  Future<void> init() async {
-    _progress = await SaveService.loadProgress();
+  /// Initializes or re-initializes progression strictly for the given user UID
+  Future<void> init({String? uid}) async {
+    _currentUid = uid;
+    
+    // 1. If signed in, attempt to load authoritative cloud progression from Neon DB
+    PlayerProgress? cloudProgress;
+    if (uid != null && uid.isNotEmpty) {
+      cloudProgress = await NeonDatabaseService().fetchUserProgress(uid);
+    }
+
+    if (cloudProgress != null) {
+      _progress = cloudProgress;
+      // Cache latest cloud state locally for offline resiliency
+      await SaveService.saveProgress(_progress, uid: _currentUid);
+    } else {
+      // 2. Fallback to local user-scoped storage (or fresh defaults)
+      _progress = await SaveService.loadProgress(uid: _currentUid);
+      // If newly registering a signed-in user, initialize their cloud record
+      if (uid != null && uid.isNotEmpty) {
+        await NeonDatabaseService().saveUserProgress(uid, _progress);
+      }
+    }
+
     _applyProgressToCars();
     _isInitialized = true;
     notifyListeners();
+  }
+
+  /// Switches active user session, cleanly loading ONLY their isolated data
+  Future<void> switchUser(String? uid) async {
+    _isInitialized = false;
+    notifyListeners();
+    await init(uid: uid);
+  }
+
+  /// Completely purges in-memory player state and resets vehicles to stock on sign-out
+  Future<void> resetToFreshState() async {
+    _currentUid = null;
+    _progress = const PlayerProgress();
+    _selectedTrack = RaceTrack.defaultTracks.first;
+    _applyProgressToCars();
+    await SaveService.clearActiveGuestSession();
+    _isInitialized = true;
+    notifyListeners();
+  }
+
+  void _saveAndSync() {
+    SaveService.saveProgress(_progress, uid: _currentUid);
+    if (_currentUid != null && _currentUid!.isNotEmpty) {
+      NeonDatabaseService().saveUserProgress(_currentUid!, _progress);
+    }
   }
 
   void selectTrack(RaceTrack track) {
@@ -38,7 +87,7 @@ class GameController extends ChangeNotifier {
   void selectCar(String carId) {
     if (_progress.unlockedCarIds.contains(carId)) {
       _progress = _progress.copyWith(selectedCarId: carId);
-      SaveService.saveProgress(_progress);
+      _saveAndSync();
       notifyListeners();
     }
   }
@@ -57,7 +106,7 @@ class GameController extends ChangeNotifier {
       );
 
       _applyProgressToCars();
-      SaveService.saveProgress(_progress);
+      _saveAndSync();
       notifyListeners();
       return true;
     }
@@ -89,7 +138,7 @@ class GameController extends ChangeNotifier {
     );
 
     _applyProgressToCars();
-    SaveService.saveProgress(_progress);
+    _saveAndSync();
     notifyListeners();
     return true;
   }
@@ -103,19 +152,19 @@ class GameController extends ChangeNotifier {
 
     _progress = _progress.copyWith(carColors: updatedColors);
     _applyProgressToCars();
-    SaveService.saveProgress(_progress);
+    _saveAndSync();
     notifyListeners();
   }
 
   void addCash(int amount) {
     _progress = _progress.copyWith(cash: _progress.cash + amount);
-    SaveService.saveProgress(_progress);
+    _saveAndSync();
     notifyListeners();
   }
 
   void addReputation(int amount) {
     _progress = _progress.copyWith(reputationLevel: _progress.reputationLevel + amount);
-    SaveService.saveProgress(_progress);
+    _saveAndSync();
     notifyListeners();
   }
 
@@ -159,7 +208,7 @@ class GameController extends ChangeNotifier {
       reputationLevel: _progress.reputationLevel + (finishPosition == 1 ? 2 : 1),
     );
 
-    SaveService.saveProgress(_progress);
+    _saveAndSync();
     notifyListeners();
   }
 

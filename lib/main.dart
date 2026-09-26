@@ -21,10 +21,25 @@ void main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   // Initialize Global Services & Save Data
+  final authService = AuthService();
+  await authService.init();
+
   final gameController = GameController();
-  await gameController.init();
+  final initialUid = (authService.currentUser != null && !authService.currentUser!.isGuest)
+      ? authService.currentUser!.uid
+      : null;
+  await gameController.init(uid: initialUid);
+
+  // Automatically switch progression when user logs in or out
+  authService.authStateChanges.listen((profile) {
+    if (profile != null && !profile.isGuest) {
+      gameController.switchUser(profile.uid);
+    } else {
+      gameController.resetToFreshState();
+    }
+  });
+
   await AudioService().init();
-  await AuthService().init();
   TiltController().init();
 
   runApp(ApexVelocityApp(gameController: gameController));
