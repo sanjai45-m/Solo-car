@@ -20,6 +20,13 @@ class MultiplayerService extends ChangeNotifier {
       StreamController<MultiplayerRoom?>.broadcast();
   Stream<MultiplayerRoom?> get roomStream => _roomStreamController.stream;
 
+  final List<LobbyChatMessage> _chatHistory = [];
+  List<LobbyChatMessage> get chatHistory => List.unmodifiable(_chatHistory);
+
+  final StreamController<LobbyChatMessage> _chatStreamController =
+      StreamController<LobbyChatMessage>.broadcast();
+  Stream<LobbyChatMessage> get chatStream => _chatStreamController.stream;
+
   Timer? _simulatedLobbyTimer;
   Timer? _countdownTimer;
   final math.Random _random = math.Random();
@@ -98,6 +105,17 @@ class MultiplayerService extends ChangeNotifier {
         case 'START_COUNTDOWN':
           if (_currentRoom!.state != RoomState.countdown && _currentRoom!.state != RoomState.racing) {
             _runCountdownLocally(_onCountdownLaunchCallback ?? () {});
+          }
+          break;
+
+        case 'LOBBY_CHAT':
+        case 'LOBBY_EMOTE':
+          if (data['chat'] != null) {
+            final chatMsg = LobbyChatMessage.fromMap(data['chat'] as Map<String, dynamic>);
+            _chatHistory.add(chatMsg);
+            if (_chatHistory.length > 50) _chatHistory.removeAt(0);
+            _chatStreamController.add(chatMsg);
+            notifyListeners();
           }
           break;
 
@@ -392,10 +410,71 @@ class MultiplayerService extends ChangeNotifier {
     _currentRoom = _currentRoom!.copyWith(players: updatedPlayers);
   }
 
+  void sendChatMessage({
+    required String text,
+    required String senderUid,
+    required String senderName,
+  }) {
+    if (_currentRoom == null || text.trim().isEmpty) return;
+
+    final msg = LobbyChatMessage(
+      id: 'chat_${DateTime.now().millisecondsSinceEpoch}',
+      senderUid: senderUid,
+      senderName: senderName,
+      message: text.trim(),
+      isEmote: false,
+      timestamp: DateTime.now(),
+    );
+
+    _chatHistory.add(msg);
+    if (_chatHistory.length > 50) _chatHistory.removeAt(0);
+    _chatStreamController.add(msg);
+    notifyListeners();
+
+    _sendWsMessage({
+      'type': 'LOBBY_CHAT',
+      'roomCode': _currentRoom!.roomCode,
+      'uid': senderUid,
+      'chat': msg.toMap(),
+    });
+  }
+
+  void sendQuickEmote({
+    required String emoteText,
+    required String emoteIcon,
+    required String senderUid,
+    required String senderName,
+  }) {
+    if (_currentRoom == null) return;
+
+    final msg = LobbyChatMessage(
+      id: 'emote_${DateTime.now().millisecondsSinceEpoch}',
+      senderUid: senderUid,
+      senderName: senderName,
+      message: emoteText,
+      emoteIcon: emoteIcon,
+      isEmote: true,
+      timestamp: DateTime.now(),
+    );
+
+    _chatHistory.add(msg);
+    if (_chatHistory.length > 50) _chatHistory.removeAt(0);
+    _chatStreamController.add(msg);
+    notifyListeners();
+
+    _sendWsMessage({
+      'type': 'LOBBY_EMOTE',
+      'roomCode': _currentRoom!.roomCode,
+      'uid': senderUid,
+      'chat': msg.toMap(),
+    });
+  }
+
   void leaveRoom() {
     _disconnectWebSocket();
     _simulatedLobbyTimer?.cancel();
     _countdownTimer?.cancel();
+    _chatHistory.clear();
     _currentRoom = null;
     _notifyRoomChanged();
   }
@@ -409,6 +488,7 @@ class MultiplayerService extends ChangeNotifier {
   void dispose() {
     _simulatedLobbyTimer?.cancel();
     _countdownTimer?.cancel();
+    _chatStreamController.close();
     _roomStreamController.close();
     super.dispose();
   }

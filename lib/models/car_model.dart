@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 
 enum CarClass { street, sport, superCar, hyperCar }
 
+enum CarBodyStyle {
+  streetTuner,   // Fastback tuner with dual stripes, lip spoiler, quad exhaust
+  jdmRotary,     // Widebody drift coupe with high-mount GT wing, single titanium can
+  muscleGtr,     // Aggressive widebody muscle with dual bonnet vents, big downforce wing
+  exoticSuper,   // Low-slung European wedge supercar with ducktail & hexagon rear deck
+  leMansHypercar,// Le Mans prototype hypercar with central shark fin & jet thruster halo
+}
+
 class CarUpgrade {
   final int level;
   final int maxLevel;
@@ -37,6 +45,7 @@ class CarModel {
   final String name;
   final String brand;
   final CarClass carClass;
+  final CarBodyStyle bodyStyle;
   final int price;
   final bool isUnlocked;
 
@@ -64,6 +73,7 @@ class CarModel {
     required this.name,
     required this.brand,
     required this.carClass,
+    this.bodyStyle = CarBodyStyle.streetTuner,
     required this.price,
     this.isUnlocked = false,
     required this.baseTopSpeed,
@@ -116,12 +126,14 @@ class CarModel {
     Color? neonUnderglowColor,
     Color? stripeColor,
     bool? hasUnderglow,
+    CarBodyStyle? bodyStyle,
   }) {
     return CarModel(
       id: id,
       name: name,
       brand: brand,
       carClass: carClass,
+      bodyStyle: bodyStyle ?? this.bodyStyle,
       price: price,
       isUnlocked: isUnlocked ?? this.isUnlocked,
       baseTopSpeed: baseTopSpeed,
@@ -147,6 +159,7 @@ class CarModel {
           name: 'Phantom GT',
           brand: 'Apex Motors',
           carClass: CarClass.street,
+          bodyStyle: CarBodyStyle.streetTuner,
           price: 0,
           isUnlocked: true,
           baseTopSpeed: 210,
@@ -163,6 +176,7 @@ class CarModel {
           name: 'Vortex RX-7',
           brand: 'Kurogane Works',
           carClass: CarClass.sport,
+          bodyStyle: CarBodyStyle.jdmRotary,
           price: 15000,
           isUnlocked: false,
           baseTopSpeed: 250,
@@ -179,6 +193,7 @@ class CarModel {
           name: 'Viper GTR',
           brand: 'Velocity Dynamics',
           carClass: CarClass.sport,
+          bodyStyle: CarBodyStyle.muscleGtr,
           price: 38000,
           isUnlocked: false,
           baseTopSpeed: 285,
@@ -195,6 +210,7 @@ class CarModel {
           name: 'Nemesis RS',
           brand: 'Stuttgart Racing',
           carClass: CarClass.superCar,
+          bodyStyle: CarBodyStyle.exoticSuper,
           price: 80000,
           isUnlocked: false,
           baseTopSpeed: 330,
@@ -211,6 +227,7 @@ class CarModel {
           name: 'Hyperion Chiron',
           brand: 'Kronos Prototype',
           carClass: CarClass.hyperCar,
+          bodyStyle: CarBodyStyle.leMansHypercar,
           price: 180000,
           isUnlocked: false,
           baseTopSpeed: 395,

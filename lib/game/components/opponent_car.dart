@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../models/car_model.dart';
 import '../../models/race_model.dart';
 import 'car_base.dart';
 import 'road_manager.dart';
@@ -36,15 +37,17 @@ class OpponentCar extends CarBase {
     required this.startingGridIndex,
     required Color color,
     required Color underglowColor,
+    CarBodyStyle? bodyStyle,
   }) : super(
           primaryColor: color,
           neonGlowColor: underglowColor,
           hasUnderglow: true,
+          bodyStyle: bodyStyle ?? CarBodyStyle.values[(startingGridIndex) % CarBodyStyle.values.length],
         ) {
-    // Place opponents in starting grid slots in front/beside player
-    trackZ = 120.0 + (startingGridIndex * 140.0);
-    // Staggered grid slots: Left (-0.45), Right (0.45), Left-center (-0.28), Right-center (0.28)
-    final gridSlots = [-0.45, 0.45, -0.28, 0.28, -0.58, 0.58];
+    // Generous starting grid spacing so cars never spawn too close or glitch at race start
+    trackZ = 220.0 + (startingGridIndex * 180.0);
+    // Staggered left/right starting slots
+    final gridSlots = [0.45, -0.45, 0.32, -0.32, 0.52, -0.52];
     trackX = gridSlots[(startingGridIndex - 1) % gridSlots.length];
     targetTrackX = trackX;
     targetRemoteZ = trackZ;

@@ -5,6 +5,7 @@ import 'screens/splash_screen.dart';
 import 'services/audio_service.dart';
 import 'services/auth_service.dart';
 import 'services/game_controller.dart';
+import 'services/tilt_controller.dart';
 import 'widgets/common/landscape_guard.dart';
 
 void main() async {
@@ -24,6 +25,7 @@ void main() async {
   await gameController.init();
   await AudioService().init();
   await AuthService().init();
+  TiltController().init();
 
   runApp(ApexVelocityApp(gameController: gameController));
 }

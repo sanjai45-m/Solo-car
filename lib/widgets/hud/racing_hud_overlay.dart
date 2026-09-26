@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../game/apex_racing_game.dart';
+import '../../models/power_up_model.dart';
 import 'drift_score_popup.dart';
+import 'heat_level_badge.dart';
 import 'minimap_widget.dart';
 import 'mobile_controls_overlay.dart';
 import 'nitro_gauge.dart';
+import 'power_up_button.dart';
 import 'race_position_badge.dart';
 import 'tachometer_speedometer.dart';
 
@@ -38,6 +41,9 @@ class _RacingHudOverlayState extends State<RacingHudOverlay> {
   double _driftPoints = 0.0;
   double _driftMultiplier = 1.0;
   bool _isDrifting = false;
+
+  PowerUpType? _currentPowerUp;
+  int _heatLevel = 1;
 
   @override
   void initState() {
@@ -108,7 +114,7 @@ class _RacingHudOverlayState extends State<RacingHudOverlay> {
 
     widget.game.onAlertMessage = (msg, bonus) {
       _safeSetState(() => _alertMessage = msg);
-      Future.delayed(const Duration(milliseconds: 1400), () {
+      Future.delayed(const Duration(milliseconds: 1600), () {
         _safeSetState(() => _alertMessage = null);
       });
     };
@@ -122,6 +128,16 @@ class _RacingHudOverlayState extends State<RacingHudOverlay> {
         });
       }
     };
+
+    widget.game.onPowerUpUpdate = (powerUp) {
+      _safeSetState(() => _currentPowerUp = powerUp);
+    };
+
+    widget.game.onHeatUpdate = (heat) {
+      if (_heatLevel != heat) {
+        _safeSetState(() => _heatLevel = heat);
+      }
+    };
   }
 
   @override
@@ -132,12 +148,21 @@ class _RacingHudOverlayState extends State<RacingHudOverlay> {
         Positioned(
           top: 16,
           left: 20,
-          child: RacePositionBadge(
-            position: _position,
-            totalRacers: _totalRacers,
-            currentLap: _currentLap,
-            totalLaps: _totalLaps,
-            trackProgress: _trackProgress,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RacePositionBadge(
+                position: _position,
+                totalRacers: _totalRacers,
+                currentLap: _currentLap,
+                totalLaps: _totalLaps,
+                trackProgress: _trackProgress,
+              ),
+              const SizedBox(height: 8),
+              // Heat Level Badge
+              HeatLevelBadge(heatLevel: _heatLevel),
+            ],
           ),
         ),
 
@@ -208,7 +233,19 @@ class _RacingHudOverlayState extends State<RacingHudOverlay> {
           ),
         ),
 
-        // 4. Bottom Center: Nitro Gauge & Speedometer
+        // 4. Combat Power-Up Trigger Button (Placed conveniently above touch brake or on right side)
+        Positioned(
+          right: 24,
+          bottom: 110,
+          child: PowerUpButton(
+            powerUp: _currentPowerUp,
+            onActivate: () {
+              widget.game.activatePowerUp();
+            },
+          ),
+        ),
+
+        // 5. Bottom Center: Nitro Gauge & Speedometer
         Positioned(
           bottom: 16,
           left: 0,
@@ -233,7 +270,7 @@ class _RacingHudOverlayState extends State<RacingHudOverlay> {
           ),
         ),
 
-        // 5. Mobile Touch Controls (Always available on screen)
+        // 6. Mobile Touch Controls (Always available on screen)
         MobileControlsOverlay(game: widget.game),
       ],
     );

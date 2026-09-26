@@ -208,3 +208,48 @@ class MultiplayerRoom {
   factory MultiplayerRoom.fromJson(String source) =>
       MultiplayerRoom.fromMap(json.decode(source) as Map<String, dynamic>);
 }
+
+class LobbyChatMessage {
+  final String id;
+  final String senderUid;
+  final String senderName;
+  final String message;
+  final String? emoteIcon;
+  final bool isEmote;
+  final DateTime timestamp;
+
+  const LobbyChatMessage({
+    required this.id,
+    required this.senderUid,
+    required this.senderName,
+    required this.message,
+    this.emoteIcon,
+    this.isEmote = false,
+    required this.timestamp,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'senderUid': senderUid,
+    'senderName': senderName,
+    'message': message,
+    'emoteIcon': emoteIcon,
+    'isEmote': isEmote,
+    'timestamp': timestamp.toIso8601String(),
+  };
+
+  factory LobbyChatMessage.fromMap(Map<String, dynamic> map) {
+    return LobbyChatMessage(
+      id: map['id'] as String? ?? '',
+      senderUid: map['senderUid'] as String? ?? '',
+      senderName: map['senderName'] as String? ?? 'Racer',
+      message: map['message'] as String? ?? '',
+      emoteIcon: map['emoteIcon'] as String?,
+      isEmote: map['isEmote'] as bool? ?? false,
+      timestamp: map['timestamp'] != null
+          ? DateTime.tryParse(map['timestamp'] as String) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+}
+

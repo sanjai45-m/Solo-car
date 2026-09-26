@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/player_progress.dart';
 import '../services/audio_service.dart';
 import '../services/game_controller.dart';
+import '../services/haptic_service.dart';
 import '../services/save_service.dart';
+import '../services/tilt_controller.dart';
 import '../widgets/common/app_background.dart';
 import '../widgets/common/glass_container.dart';
 import '../widgets/common/neon_button.dart';
@@ -21,12 +23,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _soundVolume = 0.8;
   double _musicVolume = 0.6;
   String _controlMode = 'touch_buttons';
+  bool _hapticEnabled = true;
 
   @override
   void initState() {
     super.initState();
     _soundVolume = AudioService().soundVolume;
     _musicVolume = AudioService().musicVolume;
+    _hapticEnabled = HapticService().isEnabled;
+    _controlMode = TiltController().isTiltEnabled ? 'tilt' : 'touch_buttons';
   }
 
   @override
@@ -115,7 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                             // Controls Scheme
                             Text(
-                              'INPUT SCHEME',
+                              'STEERING SCHEME',
                               style: GoogleFonts.orbitron(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
@@ -127,10 +132,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               children: [
                                 _buildControlOption('TOUCH BUTTONS', 'touch_buttons'),
                                 const SizedBox(width: 12),
-                                _buildControlOption('TILT / GYRO', 'tilt'),
+                                _buildControlOption('TILT GYRO', 'tilt'),
                               ],
                             ),
-                            const SizedBox(height: 30),
+                            const SizedBox(height: 20),
+
+                            // Haptic Feedback Toggle
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'TACTILE HAPTIC FEEDBACK',
+                                      style: GoogleFonts.orbitron(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFF90A4AE),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Vibrations on nitro, crashes, near-misses',
+                                      style: GoogleFonts.rajdhani(
+                                        fontSize: 11,
+                                        color: Colors.white60,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Switch(
+                                  value: _hapticEnabled,
+                                  activeColor: const Color(0xFF00E5FF),
+                                  activeTrackColor: const Color(0xFF00E5FF).withValues(alpha: 0.3),
+                                  onChanged: (val) {
+                                    setState(() => _hapticEnabled = val);
+                                    HapticService().setEnabled(val);
+                                    if (val) HapticService().buttonClick();
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
 
                             // Reset Career Data
                             Center(
@@ -175,7 +219,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: GestureDetector(
         onTap: () {
           setState(() => _controlMode = key);
+          TiltController().setTiltEnabled(key == 'tilt');
           SaveService.setControlMode(key);
+          HapticService().buttonClick();
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),

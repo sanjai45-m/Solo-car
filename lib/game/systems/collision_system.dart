@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/haptic_service.dart';
 import '../components/car_base.dart';
 import '../components/player_car.dart';
 import '../components/traffic_car.dart';
@@ -14,6 +15,7 @@ class CollisionSystem {
 
   final Map<int, double> _collisionCooldowns = {};
   final Set<int> _creditedNearMissCarIds = {};
+  double raceElapsedTime = 0.0;
 
   CollisionSystem({
     this.onCameraShake,
@@ -22,6 +24,10 @@ class CollisionSystem {
     this.onCrash,
   });
 
+  void update(double dt) {
+    raceElapsedTime += dt;
+  }
+
   void checkCollisions({
     required PlayerCar player,
     required List<TrafficCar> trafficList,
@@ -29,7 +35,7 @@ class CollisionSystem {
     required List<PickupItem> pickups,
     required ApexParticleSystem particles,
   }) {
-    // 1. Player vs Traffic (Accurate bumper-to-bumper dimensions: dz < 55.0, dx < 0.32)
+    // 1. Player vs Traffic (dz < 55.0, dx < 0.32)
     for (final traffic in trafficList) {
       final dz = (player.trackZ - traffic.trackZ).abs();
       final dx = (player.trackX - traffic.trackX).abs();
@@ -45,19 +51,21 @@ class CollisionSystem {
       }
     }
 
-    // 2. Player vs Opponents
-    for (final opponent in opponents) {
-      final dz = (player.trackZ - opponent.trackZ).abs();
-      final dx = (player.trackX - opponent.trackX).abs();
+    // 2. Player vs Opponents (Launch ghosting: ignore for first 3.5s of race launch)
+    if (raceElapsedTime > 3.5) {
+      for (final opponent in opponents) {
+        final dz = (player.trackZ - opponent.trackZ).abs();
+        final dx = (player.trackX - opponent.trackX).abs();
 
-      if (dz < 55.0 && dx < 0.32) {
-        _resolveVehicleCollision(
-          player: player,
-          other: opponent,
-          particles: particles,
-        );
-      } else if (dz < 120.0 && dx >= 0.32 && dx <= 0.70) {
-        _checkNearMiss(player, opponent);
+        if (dz < 55.0 && dx < 0.32) {
+          _resolveVehicleCollision(
+            player: player,
+            other: opponent,
+            particles: particles,
+          );
+        } else if (dz < 120.0 && dx >= 0.32 && dx <= 0.70) {
+          _checkNearMiss(player, opponent);
+        }
       }
     }
 
@@ -111,6 +119,9 @@ class CollisionSystem {
     if (speedDiff > 50) {
       onCameraShake?.call();
       onCrash?.call(severity);
+      HapticService().collisionHeavy();
+    } else {
+      HapticService().gearShift();
     }
   }
 
@@ -122,6 +133,7 @@ class CollisionSystem {
 
     _creditedNearMissCarIds.add(carHashCode);
     player.addNearMissReward();
+    HapticService().nearMiss();
     onNearMiss?.call('NEAR MISS! +25 NITRO', 75);
   }
 

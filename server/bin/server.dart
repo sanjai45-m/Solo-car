@@ -142,6 +142,8 @@ void _handleWebSocketClient(WebSocket socket) {
           case 'PLAYER_READY':
           case 'START_COUNTDOWN':
           case 'ROOM_STATE_SYNC':
+          case 'LOBBY_CHAT':
+          case 'LOBBY_EMOTE':
             // Broadcast to all other peers in the same room
             _broadcastToRoom(roomCode, message.toString(), sender: socket, includeSender: false);
             break;

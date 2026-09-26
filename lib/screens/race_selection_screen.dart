@@ -228,37 +228,49 @@ class _RaceSelectionScreenState extends State<RaceSelectionScreen> {
                                             Text(
                                               selectedTrack.name.toUpperCase(),
                                               style: GoogleFonts.orbitron(
-                                                fontSize: 22,
+                                                fontSize: 20,
                                                 fontWeight: FontWeight.w900,
                                                 color: Colors.white,
                                                 letterSpacing: 1.5,
                                               ),
                                             ),
                                             Text(
-                                              selectedTrack.location,
+                                              selectedTrack.location.toUpperCase(),
                                               style: GoogleFonts.orbitron(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
                                                 color: const Color(0xFF90A4AE),
+                                                letterSpacing: 1.0,
                                               ),
                                             ),
                                           ],
                                         ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: const Color(0xFF00E5FF)),
-                                          ),
-                                          child: Text(
-                                            selectedTrack.mode.name.toUpperCase(),
-                                            style: GoogleFonts.orbitron(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w800,
-                                              color: const Color(0xFF00E5FF),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(color: const Color(0xFF00E5FF)),
+                                              ),
+                                              child: Text(
+                                                selectedTrack.environment == EnvironmentType.neonCity
+                                                    ? '🌧️ WET ASPHALT'
+                                                    : (selectedTrack.environment == EnvironmentType.alpineForest
+                                                        ? '⚡ THUNDERSTORM'
+                                                        : (selectedTrack.environment == EnvironmentType.coastalSunset
+                                                            ? '🌫️ CYBER FOG'
+                                                            : '🌙 CLEAR NIGHT')),
+                                                style: GoogleFonts.orbitron(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: const Color(0xFF00E5FF),
+                                                ),
+                                              ),
                                             ),
-                                          ),
+                                          ],
                                         ),
                                       ],
                                     ),

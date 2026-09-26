@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
 import '../../models/car_model.dart';
+import '../../services/haptic_service.dart';
+import '../../services/tilt_controller.dart';
 import 'car_base.dart';
 import 'road_manager.dart';
 
@@ -41,6 +43,7 @@ class PlayerCar extends CarBase {
 
   // Track Boundary Constraint Configuration (Default: TRUE)
   bool enforceTrackBoundary;
+  double _filteredSteer = 0.0;
 
   PlayerCar({
     required super.position,
@@ -52,6 +55,7 @@ class PlayerCar extends CarBase {
           neonGlowColor: carModel.neonUnderglowColor,
           stripeColor: carModel.stripeColor,
           hasUnderglow: carModel.hasUnderglow,
+          bodyStyle: carModel.bodyStyle,
         ) {
     maxSpeed = carModel.topSpeedKmH * 32.0; // Scaled for 3D track world units
     accelerationRate = 1800.0 + (carModel.accelerationRate * 200.0);
@@ -71,6 +75,9 @@ class PlayerCar extends CarBase {
 
     // 1. Nitro Handling
     if (wantsNitro) {
+      if (!isNitroActive) {
+        HapticService().nitroBurst();
+      }
       isNitroActive = true;
       currentNitro = (currentNitro - (nitroBurnRate * dt)).clamp(0.0, maxNitro);
     } else {
@@ -99,22 +106,34 @@ class PlayerCar extends CarBase {
 
     speedKmH = speed / 32.0;
 
-    // 3. Steering & Drift Dynamics (Responsive & Controllable)
-    double steerInput = touchSteerAxis;
-    if (keySteerLeft) steerInput -= 1.0;
-    if (keySteerRight) steerInput += 1.0;
-    steerInput = steerInput.clamp(-1.0, 1.0);
+    // 3. Steering & Drift Dynamics (Responsive, Smooth & Planted)
+    double rawSteerInput = touchSteerAxis;
+    if (keySteerLeft) rawSteerInput -= 1.0;
+    if (keySteerRight) rawSteerInput += 1.0;
+    
+    // Seamless Tilt Gyroscope Steering
+    final tiltSteer = TiltController().currentSteering;
+    if (tiltSteer.abs() > 0.01) {
+      rawSteerInput = (rawSteerInput + tiltSteer).clamp(-1.0, 1.0);
+    } else {
+      rawSteerInput = rawSteerInput.clamp(-1.0, 1.0);
+    }
+
+    // Smooth exponential filtering to eliminate all micro-jitter
+    final steerResponseSpeed = (rawSteerInput != 0.0) ? 18.0 : 14.0;
+    _filteredSteer += (rawSteerInput - _filteredSteer) * (steerResponseSpeed * dt).clamp(0.0, 1.0);
+    final steerInput = _filteredSteer;
 
     final speedFactor = (speed / maxSpeed).clamp(0.20, 1.0);
     final handlingAgility = 1.85 + (carModel.handlingRate * 0.15);
 
     // Drift activation when handbrake held or sharp steering at high speed
-    final isSharpTurn = steerInput.abs() > 0.7 && speedKmH > 140;
+    final isSharpTurn = steerInput.abs() > 0.65 && speedKmH > 130;
     isDrifting = (isHandbrakeActive || isSharpTurn) && speedKmH > 60;
 
     if (isDrifting) {
       final targetAngle = steerInput * 0.28;
-      steeringAngle += (targetAngle - steeringAngle) * 10.0 * dt;
+      steeringAngle += (targetAngle - steeringAngle) * 12.0 * dt;
       trackX += steerInput * (handlingAgility * 1.25) * speedFactor * dt;
       speed *= (1.0 - 0.04 * dt);
 
@@ -125,13 +144,13 @@ class PlayerCar extends CarBase {
       currentNitro = (currentNitro + (14.0 * dt)).clamp(0.0, maxNitro);
     } else {
       final targetAngle = steerInput * 0.14;
-      steeringAngle += (targetAngle - steeringAngle) * 14.0 * dt;
+      steeringAngle += (targetAngle - steeringAngle) * 16.0 * dt;
       
-      if (steerInput != 0.0) {
+      if (steerInput.abs() > 0.005) {
         trackX += steerInput * handlingAgility * speedFactor * dt;
       } else {
         // High stability self-centering damping
-        steeringAngle *= (1.0 - 12.0 * dt).clamp(0.0, 1.0);
+        steeringAngle *= (1.0 - 14.0 * dt).clamp(0.0, 1.0);
       }
 
       if (isDriftingActive) {
@@ -145,7 +164,7 @@ class PlayerCar extends CarBase {
 
     // 4. Subtle Gentle Centrifugal Force around Road Curves
     final currentSegment = roadManager.findSegment(trackZ);
-    final centrifugalForce = currentSegment.curve * (speed / maxSpeed) * 0.35 * dt;
+    final centrifugalForce = currentSegment.curve * (speed / maxSpeed) * 0.30 * dt;
     trackX -= centrifugalForce;
 
     // 5. Road Boundaries Constraint (Configurable, default: TRUE prevents leaving the road)

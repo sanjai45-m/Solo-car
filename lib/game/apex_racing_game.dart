@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/car_model.dart';
 import '../models/multiplayer_room.dart';
+import '../models/power_up_model.dart';
 import '../models/race_model.dart';
 import '../services/auth_service.dart';
 import '../services/multiplayer_service.dart';
@@ -14,8 +15,11 @@ import 'components/player_car.dart';
 import 'components/road_manager.dart';
 import 'components/traffic_car.dart';
 import 'systems/collision_system.dart';
+import 'systems/combat_system.dart';
 import 'systems/particle_effects.dart';
+import 'systems/police_pursuit_system.dart';
 import 'systems/race_manager.dart';
+import 'systems/weather_system.dart';
 
 class ApexRacingGame extends FlameGame with KeyboardEvents {
   final CarModel carModel;
@@ -30,6 +34,8 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
   void Function(String title, int bonus)? onAlertMessage;
   void Function(double driftPoints, double multiplier, bool isDrifting)? onDriftUpdate;
   void Function(int position, int timeMs, int cashEarned)? onRaceFinish;
+  void Function(PowerUpType? powerUp)? onPowerUpUpdate;
+  void Function(int heatLevel)? onHeatUpdate;
   VoidCallback? onPauseRequest;
 
   late final RoadManager roadManager;
@@ -37,18 +43,22 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
   late final ApexParticleSystem particleSystem;
   late final CollisionSystem collisionSystem;
   late final RaceManager raceManager;
+  late final CombatSystem combatSystem;
+  late final PolicePursuitSystem policeSystem;
+  late final WeatherSystem weatherSystem;
 
   final List<OpponentCar> opponents = [];
   final List<TrafficCar> trafficList = [];
   final List<PickupItem> pickups = [];
 
-  // Pseudo-3D Camera constants matching mobile hill climbing racer
+  // Pseudo-3D Camera constants
   final double cameraHeight = 1400.0;
-  final double cameraDepth = 0.85; // 1.0 / tan(FOV / 2)
+  final double cameraDepth = 0.85;
 
   double shakeIntensity = 0.0;
   final math.Random _random = math.Random();
   double pickupSpawnTimer = 0.0;
+  double powerUpCrateSpawnTimer = 0.0;
   bool isInitialized = false;
   final bool enforceTrackBoundary;
   final List<MultiplayerPlayerSlot>? multiplayerOpponents;
@@ -66,6 +76,8 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
     this.onAlertMessage,
     this.onDriftUpdate,
     this.onRaceFinish,
+    this.onPowerUpUpdate,
+    this.onHeatUpdate,
     this.onPauseRequest,
   }) {
     roadManager = RoadManager(track: track);
@@ -81,6 +93,42 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
 
     _spawnOpponents();
     _initTrafficFleet();
+
+    // 1. Combat Power-Up System
+    combatSystem = CombatSystem();
+    combatSystem.onPowerUpInventoryChanged = (p) => onPowerUpUpdate?.call(p);
+    combatSystem.onCombatEventTriggered = (msg, type) {
+      onAlertMessage?.call(msg, 0);
+      triggerScreenShake(intensity: 5.0);
+    };
+
+    // 2. Dynamic Weather System
+    WeatherType chosenWeather = WeatherType.clearNight;
+    if (track.environment == EnvironmentType.neonCity) {
+      chosenWeather = WeatherType.rain;
+    } else if (track.environment == EnvironmentType.coastalSunset) {
+      chosenWeather = WeatherType.cyberFog;
+    } else if (track.environment == EnvironmentType.desertCanyon) {
+      chosenWeather = WeatherType.clearNight;
+    } else if (track.environment == EnvironmentType.alpineForest) {
+      chosenWeather = WeatherType.thunderstorm;
+    }
+    weatherSystem = WeatherSystem(currentWeather: chosenWeather);
+
+    // 3. Police Pursuit System (Need for Speed mode)
+    policeSystem = PolicePursuitSystem(
+      playerCar: playerCar,
+      roadManager: roadManager,
+      onHeatLevelChanged: (h) => onHeatUpdate?.call(h),
+      onPursuitEvaded: (msg, bounty) {
+        onAlertMessage?.call(msg, bounty);
+      },
+      onPlayerBusted: () {
+        onAlertMessage?.call('🚨 BUSTED BY POLICE SYNDICATE!', 0);
+        playerCar.speed = 0;
+        playerCar.speedKmH = 0;
+      },
+    );
 
     collisionSystem = CollisionSystem(
       onCameraShake: triggerScreenShake,
@@ -111,7 +159,6 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
   void _spawnOpponents() {
     opponents.clear();
 
-    // 1. If in real multiplayer lobby, spawn EXACT opponent player cars from lobby slots
     if (multiplayerOpponents != null && multiplayerOpponents!.isNotEmpty) {
       for (int i = 0; i < multiplayerOpponents!.length; i++) {
         final slot = multiplayerOpponents![i];
@@ -131,7 +178,6 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
       return;
     }
 
-    // 2. Single-player / Practice AI fleet
     final rivalNames = [
       'Viper_99',
       'ApexPhantom',
@@ -169,7 +215,6 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
   void _initTrafficFleet() {
     trafficList.clear();
 
-    // In 2-player / multiplayer head-to-head duel, no computer cars or traffic
     if (multiplayerOpponents != null && multiplayerOpponents!.isNotEmpty) {
       return;
     }
@@ -188,7 +233,6 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
     final count = track.trafficDensity * 4;
 
     for (int i = 0; i < count; i++) {
-      // Traffic starts well ahead of the starting grid straightaway
       final z = 2400.0 + (i * 1200.0);
       final lane = lanes[i % lanes.length];
       final type = trafficTypes[i % trafficTypes.length];
@@ -205,6 +249,15 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
       );
       trafficList.add(traffic);
     }
+  }
+
+  void activatePowerUp() {
+    combatSystem.activatePowerUp(
+      playerCar,
+      opponents,
+      policeSystem.activePolice,
+      this,
+    );
   }
 
   @override
@@ -225,9 +278,10 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
       return;
     }
 
+    // Apply weather traction multiplier to steering lateral grip
     playerCar.update(dt);
 
-    // 1. In multiplayer match, broadcast YOUR car position & sync opponent car positions
+    // Multi-player sync
     if (multiplayerOpponents != null && multiplayerOpponents!.isNotEmpty) {
       final myUid = AuthService().currentUser?.uid ?? 'me';
       MultiplayerService().updatePlayerTelemetry(
@@ -270,6 +324,12 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
     for (final p in pickups) {
       p.update(dt);
     }
+
+    // Systems updates
+    combatSystem.update(dt, playerCar, opponents, trafficList, policeSystem.activePolice);
+    policeSystem.update(dt);
+    collisionSystem.update(dt);
+    weatherSystem.update(dt);
     particleSystem.update(dt);
     raceManager.update(dt);
 
@@ -307,6 +367,7 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
 
     // Pickups spawner along track
     _updatePickupSpawner(dt);
+    _updateCombatCrateSpawner(dt);
 
     // Collision Detection
     collisionSystem.checkCollisions(
@@ -331,6 +392,8 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
       playerCar.driftMultiplier,
       playerCar.isDrifting,
     );
+
+    onHeatUpdate?.call(policeSystem.heatLevel);
   }
 
   void _updatePickupSpawner(double dt) {
@@ -352,11 +415,21 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
       pickups.add(pickup);
     }
 
-    // Remove pickups far behind player
     pickups.removeWhere((p) {
       final dz = playerCar.trackZ - p.trackZ;
       return dz > 500.0 && dz < (roadManager.trackLength - 500.0);
     });
+  }
+
+  void _updateCombatCrateSpawner(double dt) {
+    powerUpCrateSpawnTimer += dt;
+    if (powerUpCrateSpawnTimer > 4.5 && combatSystem.pickups.length < 5) {
+      powerUpCrateSpawnTimer = 0.0;
+      final lanes = [-0.55, 0.0, 0.55];
+      final spawnZ = playerCar.trackZ + 1400.0 + _random.nextDouble() * 900.0;
+      final spawnX = lanes[_random.nextInt(lanes.length)];
+      combatSystem.spawnPickupAhead(spawnZ, spawnX, this);
+    }
   }
 
   void triggerScreenShake({double intensity = 6.0}) {
@@ -389,7 +462,7 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
       cameraDepth: cameraDepth,
     );
 
-    // 4. Render 3D AI Opponents & Traffic Vehicles (Depth-sorted Far to Near)
+    // 4. Render 3D AI Opponents, Police, Combat Boxes, Mines & Traffic Vehicles (Depth-sorted)
     _renderOtherVehiclesAndPickups(canvas, screenSize);
 
     // 5. Render Player Car (Bottom Center in 3D perspective)
@@ -401,6 +474,9 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
     // 7. Day/Night Lighting Overlay & Headlight Beam
     _renderAtmosphericOverlay(canvas, screenSize);
 
+    // 8. Dynamic Weather FX (Rain particles, Thunder lightning flash)
+    weatherSystem.renderWeather(canvas, screenSize);
+
     canvas.restore();
   }
 
@@ -408,15 +484,10 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
     final horizonY = screenSize.height * 0.40;
     final panX = -playerCar.trackX * 80.0;
 
-    // Sky Gradient
     List<Color> skyColors;
     switch (track.environment) {
       case EnvironmentType.alpineForest:
-        skyColors = const [
-          Color(0xFF29B6F6),
-          Color(0xFF81D4FA),
-          Color(0xFFE1F5FE),
-        ];
+        skyColors = const [Color(0xFF29B6F6), Color(0xFF81D4FA), Color(0xFFE1F5FE)];
         break;
       case EnvironmentType.neonCity:
         skyColors = const [Color(0xFF070214), Color(0xFF13092D), Color(0xFF1D0E44)];
@@ -437,9 +508,7 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
       ).createShader(Rect.fromLTWH(0, 0, screenSize.width, horizonY));
     canvas.drawRect(Rect.fromLTWH(0, 0, screenSize.width, horizonY), skyPaint);
 
-    // Sun / Moon / Stars
     if (track.environment == EnvironmentType.alpineForest) {
-      // Radiant Daylight Sun
       final sunCenter = Offset(screenSize.width * 0.80 + (panX * 0.15), horizonY * 0.30);
       final sunGlow = Paint()
         ..shader = RadialGradient(
@@ -451,19 +520,7 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
         ).createShader(Rect.fromCircle(center: sunCenter, radius: 45));
       canvas.drawCircle(sunCenter, 45, sunGlow);
       canvas.drawCircle(sunCenter, 18, Paint()..color = const Color(0xFFFFFFFD));
-
-      // Fluffy clouds
-      final cloudPaint = Paint()..color = Colors.white.withValues(alpha: 0.85);
-      final cloudOffset = (panX * 0.3) % screenSize.width;
-      for (int i = 0; i < 3; i++) {
-        final cx = ((i * 380) + cloudOffset) % (screenSize.width + 200) - 100;
-        final cy = horizonY * (0.25 + (i * 0.15));
-        canvas.drawOval(Rect.fromCenter(center: Offset(cx, cy), width: 140, height: 35), cloudPaint);
-        canvas.drawOval(Rect.fromCenter(center: Offset(cx + 25, cy - 10), width: 90, height: 40), cloudPaint);
-        canvas.drawOval(Rect.fromCenter(center: Offset(cx - 25, cy - 5), width: 80, height: 32), cloudPaint);
-      }
     } else {
-      // Night Sky: Twinkling Stars Field
       final starRand = math.Random(42);
       final starPaint = Paint()..color = Colors.white;
       for (int i = 0; i < 60; i++) {
@@ -474,21 +531,9 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
         
         starPaint.color = Colors.white.withValues(alpha: starAlpha);
         canvas.drawCircle(Offset(sx, sy), starRadius, starPaint);
-
-        // Occasional 4-point sparkle cross
-        if (i % 8 == 0) {
-          final sparklePaint = Paint()
-            ..color = const Color(0xFF80D8FF).withValues(alpha: 0.7)
-            ..strokeWidth = 1.0;
-          canvas.drawLine(Offset(sx - 4, sy), Offset(sx + 4, sy), sparklePaint);
-          canvas.drawLine(Offset(sx, sy - 4), Offset(sx, sy + 4), sparklePaint);
-        }
       }
 
-      // 3D Luminous Moon with Multi-Layered Atmosphere & Craters
       final moonCenter = Offset(screenSize.width * 0.75 + (panX * 0.12), horizonY * 0.35);
-
-      // Celestial Outer Halo
       final outerHalo = Paint()
         ..shader = RadialGradient(
           colors: [
@@ -498,71 +543,12 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
           ],
         ).createShader(Rect.fromCircle(center: moonCenter, radius: 55));
       canvas.drawCircle(moonCenter, 55, outerHalo);
-
-      // Moon Body Gradient
-      final moonBody = Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(-0.3, -0.3),
-          colors: [
-            const Color(0xFFFFFFFF),
-            const Color(0xFFE0F7FA),
-            const Color(0xFFB2EBF2),
-          ],
-        ).createShader(Rect.fromCircle(center: moonCenter, radius: 24));
-      canvas.drawCircle(moonCenter, 24, moonBody);
-
-      // Moon Craters
-      final craterPaint = Paint()..color = const Color(0xFF80DEEA).withValues(alpha: 0.35);
-      canvas.drawCircle(moonCenter + const Offset(-6, -4), 4.5, craterPaint);
-      canvas.drawCircle(moonCenter + const Offset(5, 7), 5.5, craterPaint);
-      canvas.drawCircle(moonCenter + const Offset(8, -5), 3.5, craterPaint);
-      canvas.drawCircle(moonCenter + const Offset(-4, 9), 3.0, craterPaint);
+      canvas.drawCircle(moonCenter, 24, Paint()..color = const Color(0xFFFFFFFF));
     }
 
-    // Distant Mountain Silhouette Layer 1 (Far jagged peaks)
-    final farMountainPaint = Paint()
-      ..color = (track.environment == EnvironmentType.alpineForest)
-          ? const Color(0xFF457B9D)
-          : const Color(0xFF0C1322);
-    final farMountainPath = Path()..moveTo(0, horizonY);
-    for (double x = -100; x < screenSize.width + 100; x += 50) {
-      final h = 35.0 + math.sin((x + panX * 0.25) * 0.025).abs() * 70.0;
-      farMountainPath.lineTo(x + panX * 0.25, horizonY - h);
-    }
-    farMountainPath.lineTo(screenSize.width, horizonY);
-    farMountainPath.close();
-    canvas.drawPath(farMountainPath, farMountainPaint);
-
-    // Distant Mountain Silhouette Layer 2 (Near rolling mountain slopes with cyber grid highlights)
-    final nearMountainPaint = Paint()
-      ..color = (track.environment == EnvironmentType.alpineForest)
-          ? const Color(0xFF1D5A3A)
-          : const Color(0xFF161F30);
-    final nearMountainPath = Path()..moveTo(0, horizonY);
-    for (double x = -100; x < screenSize.width + 100; x += 60) {
-      final h = 20.0 + math.sin((x + panX * 0.45) * 0.035).abs() * 50.0;
-      nearMountainPath.lineTo(x + panX * 0.45, horizonY - h);
-    }
-    nearMountainPath.lineTo(screenSize.width, horizonY);
-    nearMountainPath.close();
-    canvas.drawPath(nearMountainPath, nearMountainPaint);
-
-    // Ground Plane Base Under Horizon (Clean terrain base before road polygons)
-    Color groundBaseColor;
-    switch (track.environment) {
-      case EnvironmentType.alpineForest:
-        groundBaseColor = const Color(0xFF388E3C);
-        break;
-      case EnvironmentType.neonCity:
-        groundBaseColor = const Color(0xFF111827);
-        break;
-      case EnvironmentType.coastalSunset:
-        groundBaseColor = const Color(0xFF8D462E);
-        break;
-      case EnvironmentType.desertCanyon:
-        groundBaseColor = const Color(0xFF6D4C41);
-        break;
-    }
+    Color groundBaseColor = (track.environment == EnvironmentType.alpineForest)
+        ? const Color(0xFF388E3C)
+        : const Color(0xFF111827);
     canvas.drawRect(
       Rect.fromLTWH(0, horizonY, screenSize.width, screenSize.height - horizonY),
       Paint()..color = groundBaseColor,
@@ -651,7 +637,30 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
       }
     }
 
-    // 2. Traffic Cars
+    // 2. Police Interceptors
+    for (final cop in policeSystem.activePolice) {
+      final proj = _projectTrackObject(cop.trackZ, cop.trackX, screenSize);
+      if (proj != null) {
+        final relZ = proj['relZ'] as double;
+        final screenX = proj['screenX'] as double;
+        final screenY = proj['screenY'] as double;
+        final scale = proj['scale'] as double;
+        final carScale = (scale * 1750.0).clamp(0.03, 1.8);
+
+        renderQueue.add({
+          'dist': relZ,
+          'render': () => cop.render3D(
+                canvas,
+                screenX: screenX,
+                screenY: screenY,
+                scale: carScale,
+                rollAngle: cop.steeringAngle,
+              ),
+        });
+      }
+    }
+
+    // 3. Traffic Cars
     for (final t in trafficList) {
       final proj = _projectTrackObject(t.trackZ, t.trackX, screenSize);
       if (proj != null) {
@@ -674,7 +683,51 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
       }
     }
 
-    // 3. Pickups
+    // 4. Combat Power-Up Pickup Boxes
+    for (final p in combatSystem.pickups) {
+      final proj = _projectTrackObject(p.trackZ, p.trackX, screenSize);
+      if (proj != null) {
+        final relZ = proj['relZ'] as double;
+        final screenX = proj['screenX'] as double;
+        final screenY = proj['screenY'] as double;
+        final scale = proj['scale'] as double;
+        final boxScale = (scale * 2200.0).clamp(0.05, 2.2);
+
+        renderQueue.add({
+          'dist': relZ,
+          'render': () => p.render3D(
+                canvas,
+                screenX: screenX,
+                screenY: screenY,
+                scale: boxScale,
+              ),
+        });
+      }
+    }
+
+    // 5. Laser Mines
+    for (final m in combatSystem.activeMines) {
+      final proj = _projectTrackObject(m.trackZ, m.trackX, screenSize);
+      if (proj != null) {
+        final relZ = proj['relZ'] as double;
+        final screenX = proj['screenX'] as double;
+        final screenY = proj['screenY'] as double;
+        final scale = proj['scale'] as double;
+        final mineScale = (scale * 2000.0).clamp(0.05, 2.0);
+
+        renderQueue.add({
+          'dist': relZ,
+          'render': () => m.render3D(
+                canvas,
+                screenX: screenX,
+                screenY: screenY,
+                scale: mineScale,
+              ),
+        });
+      }
+    }
+
+    // 6. Classic Pickups
     for (final p in pickups) {
       final proj = _projectTrackObject(p.trackZ, p.trackX, screenSize);
       if (proj != null) {
@@ -696,7 +749,7 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
       }
     }
 
-    // Sort Far to Near (descending by relative distance)
+    // Sort Far to Near (descending)
     renderQueue.sort((a, b) => (b['dist'] as double).compareTo(a['dist'] as double));
 
     for (final item in renderQueue) {
@@ -716,16 +769,30 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
       scale: playerScale,
       rollAngle: playerCar.steeringAngle,
     );
+
+    // Energy Shield Bubble if active
+    if (combatSystem.hasShield) {
+      final shieldRadius = 85.0;
+      final shieldPaint = Paint()
+        ..color = const Color(0xFF00E5FF).withValues(alpha: 0.35)
+        ..style = PaintingStyle.fill
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+      canvas.drawCircle(Offset(playerScreenX, playerScreenY), shieldRadius, shieldPaint);
+
+      final shieldBorder = Paint()
+        ..color = const Color(0xFF00E5FF)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5;
+      canvas.drawCircle(Offset(playerScreenX, playerScreenY), shieldRadius, shieldBorder);
+    }
   }
 
   void _renderAtmosphericOverlay(Canvas canvas, Size screenSize) {
     if (track.timeOfDay == TimeOfDayType.night) {
-      // Dark cyber-blue night vignette
       final nightPaint = Paint()
         ..color = const Color(0xFF040612).withValues(alpha: 0.45);
       canvas.drawRect(Rect.fromLTWH(0, 0, screenSize.width, screenSize.height), nightPaint);
 
-      // Player Headlights Beam on road
       final playerScreenX = (screenSize.width / 2) + (playerCar.trackX * (screenSize.width * 0.16));
       final playerScreenY = screenSize.height * 0.82;
 
@@ -758,6 +825,11 @@ class ApexRacingGame extends FlameGame with KeyboardEvents {
   KeyEventResult onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
     if (keysPressed.contains(LogicalKeyboardKey.escape)) {
       onPauseRequest?.call();
+      return KeyEventResult.handled;
+    }
+
+    if (keysPressed.contains(LogicalKeyboardKey.keyE)) {
+      activatePowerUp();
       return KeyEventResult.handled;
     }
 

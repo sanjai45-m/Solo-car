@@ -9,6 +9,7 @@ import '../services/neon_database_service.dart';
 import '../widgets/common/app_background.dart';
 import '../widgets/common/neon_button.dart';
 import '../widgets/dialogs/auth_dialog.dart';
+import '../widgets/multiplayer/lobby_chat_widget.dart';
 import 'race_game_screen.dart';
 
 class MultiplayerLobbyScreen extends StatefulWidget {
@@ -943,7 +944,13 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               );
             }),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
+
+            // Live In-Lobby Text Chat & Quick Emotes Ribbon
+            if (!isCountdown) ...[
+              const LobbyChatWidget(),
+              const SizedBox(height: 14),
+            ],
 
             // Control Actions (Only shown when not in countdown)
             if (!isCountdown)

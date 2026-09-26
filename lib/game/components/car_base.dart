@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import '../../models/car_model.dart';
 
 abstract class CarBase extends PositionComponent {
   final double carWidth;
@@ -9,6 +10,7 @@ abstract class CarBase extends PositionComponent {
   final Color neonGlowColor;
   final Color stripeColor;
   final bool hasUnderglow;
+  final CarBodyStyle bodyStyle;
 
   // Track coordinates in Pseudo-3D space
   double trackZ = 0.0; // Distance along track (0 to trackLength)
@@ -39,6 +41,7 @@ abstract class CarBase extends PositionComponent {
     this.neonGlowColor = const Color(0xFF00E5FF),
     this.stripeColor = const Color(0xFFFFFFFF),
     this.hasUnderglow = true,
+    this.bodyStyle = CarBodyStyle.streetTuner,
   }) : super(
           size: Vector2(145.0, 92.0),
           anchor: Anchor.center,
@@ -145,29 +148,87 @@ abstract class CarBase extends PositionComponent {
 
     // Diffuser vertical strakes
     final finPaint = Paint()..color = const Color(0xFF080C14);
-    for (int i = -3; i <= 3; i++) {
-      final finX = i * (w * 0.085);
+    final strakesCount = (bodyStyle == CarBodyStyle.leMansHypercar) ? 5 : 3;
+    for (int i = -strakesCount; i <= strakesCount; i++) {
+      final finX = i * (w * 0.07);
       canvas.drawRect(Rect.fromLTWH(finX - 1.5, h * 0.18, 3.0, h * 0.24), finPaint);
     }
 
-    // 5. 3D Widebody Supercar Chassis Body
-    final bodyPath = Path()
-      ..moveTo(-w * 0.49, h * 0.25) // Left wheel arch
-      ..lineTo(-w * 0.47, h * 0.42) // Rear bumper low left
-      ..lineTo(w * 0.47, h * 0.42) // Rear bumper low right
-      ..lineTo(w * 0.49, h * 0.25) // Right wheel arch
-      ..lineTo(w * 0.45, -h * 0.06) // Shoulder line right
-      ..lineTo(w * 0.33, -h * 0.44) // Roofline right
-      ..lineTo(-w * 0.33, -h * 0.44) // Roofline left
-      ..lineTo(-w * 0.45, -h * 0.06) // Shoulder line left
-      ..close();
+    // 5. 3D Supercar Chassis Body Silhouette based on unique bodyStyle
+    final bodyPath = Path();
+    switch (bodyStyle) {
+      case CarBodyStyle.leMansHypercar:
+        // Ultra-low, wide LMP1 cockpit with wide fenders
+        bodyPath.moveTo(-w * 0.52, h * 0.28);
+        bodyPath.lineTo(-w * 0.50, h * 0.42);
+        bodyPath.lineTo(w * 0.50, h * 0.42);
+        bodyPath.lineTo(w * 0.52, h * 0.28);
+        bodyPath.lineTo(w * 0.48, -h * 0.04);
+        bodyPath.lineTo(w * 0.26, -h * 0.48); // Teardrop roofline
+        bodyPath.lineTo(-w * 0.26, -h * 0.48);
+        bodyPath.lineTo(-w * 0.48, -h * 0.04);
+        bodyPath.close();
+        break;
+
+      case CarBodyStyle.exoticSuper:
+        // Wedge shape European supercar
+        bodyPath.moveTo(-w * 0.50, h * 0.26);
+        bodyPath.lineTo(-w * 0.47, h * 0.42);
+        bodyPath.lineTo(w * 0.47, h * 0.42);
+        bodyPath.lineTo(w * 0.50, h * 0.26);
+        bodyPath.lineTo(w * 0.46, -h * 0.08);
+        bodyPath.lineTo(w * 0.30, -h * 0.46);
+        bodyPath.lineTo(-w * 0.30, -h * 0.46);
+        bodyPath.lineTo(-w * 0.46, -h * 0.08);
+        bodyPath.close();
+        break;
+
+      case CarBodyStyle.muscleGtr:
+        // Squared-off muscular GT widebody
+        bodyPath.moveTo(-w * 0.48, h * 0.22);
+        bodyPath.lineTo(-w * 0.48, h * 0.43);
+        bodyPath.lineTo(w * 0.48, h * 0.43);
+        bodyPath.lineTo(w * 0.48, h * 0.22);
+        bodyPath.lineTo(w * 0.46, -h * 0.05);
+        bodyPath.lineTo(w * 0.36, -h * 0.42);
+        bodyPath.lineTo(-w * 0.36, -h * 0.42);
+        bodyPath.lineTo(-w * 0.46, -h * 0.05);
+        bodyPath.close();
+        break;
+
+      case CarBodyStyle.jdmRotary:
+        // Streamlined JDM drift coupe with aggressive flared arches
+        bodyPath.moveTo(-w * 0.51, h * 0.24);
+        bodyPath.lineTo(-w * 0.46, h * 0.42);
+        bodyPath.lineTo(w * 0.46, h * 0.42);
+        bodyPath.lineTo(w * 0.51, h * 0.24);
+        bodyPath.lineTo(w * 0.44, -h * 0.08);
+        bodyPath.lineTo(w * 0.31, -h * 0.44);
+        bodyPath.lineTo(-w * 0.31, -h * 0.44);
+        bodyPath.lineTo(-w * 0.44, -h * 0.08);
+        bodyPath.close();
+        break;
+
+      case CarBodyStyle.streetTuner:
+      default:
+        bodyPath.moveTo(-w * 0.49, h * 0.25);
+        bodyPath.lineTo(-w * 0.47, h * 0.42);
+        bodyPath.lineTo(w * 0.47, h * 0.42);
+        bodyPath.lineTo(w * 0.49, h * 0.25);
+        bodyPath.lineTo(w * 0.45, -h * 0.06);
+        bodyPath.lineTo(w * 0.33, -h * 0.44);
+        bodyPath.lineTo(-w * 0.33, -h * 0.44);
+        bodyPath.lineTo(-w * 0.45, -h * 0.06);
+        bodyPath.close();
+        break;
+    }
 
     final bodyPaint = Paint()
       ..shader = LinearGradient(
         colors: [
-          Color.lerp(primaryColor, Colors.white, 0.25)!,
+          Color.lerp(primaryColor, Colors.white, 0.28)!,
           primaryColor,
-          Color.lerp(primaryColor, Colors.black, 0.35)!,
+          Color.lerp(primaryColor, Colors.black, 0.38)!,
         ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
@@ -181,14 +242,18 @@ abstract class CarBase extends PositionComponent {
       ..strokeWidth = math.max(1.2, w * 0.02);
     canvas.drawPath(bodyPath, highlightPaint);
 
-    // 6. Dual Center Racing Stripes
+    // 6. Center Racing Stripes / Decals
     final stripePaint = Paint()..color = stripeColor.withValues(alpha: 0.90);
-    final stripeW = w * 0.055;
-    final gap = w * 0.02;
-    canvas.drawRect(Rect.fromLTWH(-gap - stripeW, -h * 0.43, stripeW, h * 0.82), stripePaint);
-    canvas.drawRect(Rect.fromLTWH(gap, -h * 0.43, stripeW, h * 0.82), stripePaint);
+    if (bodyStyle == CarBodyStyle.muscleGtr || bodyStyle == CarBodyStyle.streetTuner) {
+      final stripeW = w * 0.055;
+      final gap = w * 0.02;
+      canvas.drawRect(Rect.fromLTWH(-gap - stripeW, -h * 0.43, stripeW, h * 0.82), stripePaint);
+      canvas.drawRect(Rect.fromLTWH(gap, -h * 0.43, stripeW, h * 0.82), stripePaint);
+    } else if (bodyStyle == CarBodyStyle.jdmRotary) {
+      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: w * 0.12, height: h * 0.84), stripePaint);
+    }
 
-    // 7. Aerodynamic Tinted Rear Window & Engine Louvers
+    // 7. Aerodynamic Tinted Rear Window & Canopy
     final glassPath = Path()
       ..moveTo(-w * 0.27, -h * 0.40)
       ..lineTo(w * 0.27, -h * 0.40)
@@ -206,52 +271,62 @@ abstract class CarBase extends PositionComponent {
       ..close();
     canvas.drawPath(glossPath, Paint()..color = Colors.white.withValues(alpha: 0.28));
 
-    // Louver Slats
-    final louverPaint = Paint()..color = const Color(0xFF161E2E);
-    for (int i = 0; i < 4; i++) {
-      final yProgress = i / 3.0;
-      final ly = -h * 0.36 + (yProgress * h * 0.24);
-      final lw = w * (0.44 + yProgress * 0.22);
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset(0, ly), width: lw, height: math.max(2.0, h * 0.035)),
-          const Radius.circular(1),
-        ),
-        louverPaint,
-      );
+    // 8. Central Shark Fin (Le Mans Prototype)
+    if (bodyStyle == CarBodyStyle.leMansHypercar) {
+      final finCentralPath = Path()
+        ..moveTo(0, -h * 0.48)
+        ..lineTo(0, -h * 0.18)
+        ..lineTo(-w * 0.02, -h * 0.18)
+        ..lineTo(-w * 0.01, -h * 0.48)
+        ..close();
+      canvas.drawPath(finCentralPath, Paint()..color = const Color(0xFF0A101C));
+      canvas.drawRect(Rect.fromCenter(center: Offset(0, -h * 0.32), width: 3.5, height: h * 0.28), Paint()..color = neonGlowColor);
     }
 
-    // 8. 3D Carbon Fiber GT Wing Spoiler with Mounting Struts & Endplates
-    final strutPaint = Paint()..color = const Color(0xFF1E2838);
-    canvas.drawRect(Rect.fromLTWH(-w * 0.27, -h * 0.22, w * 0.045, h * 0.16), strutPaint);
-    canvas.drawRect(Rect.fromLTWH(w * 0.225, -h * 0.22, w * 0.045, h * 0.16), strutPaint);
-
-    // Main Spoiler Wing Bar
+    // 9. 3D Carbon Fiber GT Wing Spoiler based on Model
     final spoilerPaint = Paint()..color = const Color(0xFF0D1117);
-    final spoilerRect = Rect.fromCenter(
-      center: Offset(0, -h * 0.22),
-      width: w * 0.95,
-      height: math.max(4.0, h * 0.09),
-    );
-    canvas.drawRRect(RRect.fromRectAndRadius(spoilerRect, const Radius.circular(2)), spoilerPaint);
+    if (bodyStyle != CarBodyStyle.exoticSuper) {
+      final strutPaint = Paint()..color = const Color(0xFF1E2838);
+      canvas.drawRect(Rect.fromLTWH(-w * 0.27, -h * 0.22, w * 0.045, h * 0.16), strutPaint);
+      canvas.drawRect(Rect.fromLTWH(w * 0.225, -h * 0.22, w * 0.045, h * 0.16), strutPaint);
 
-    // Spoiler Endplates
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(-w * 0.47, -h * 0.22), width: w * 0.035, height: h * 0.18),
-        const Radius.circular(1),
-      ),
-      spoilerPaint,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(w * 0.47, -h * 0.22), width: w * 0.035, height: h * 0.18),
-        const Radius.circular(1),
-      ),
-      spoilerPaint,
-    );
+      final spoilerWidth = (bodyStyle == CarBodyStyle.jdmRotary || bodyStyle == CarBodyStyle.leMansHypercar)
+          ? w * 1.02
+          : w * 0.94;
+      final spoilerRect = Rect.fromCenter(
+        center: Offset(0, -h * 0.22),
+        width: spoilerWidth,
+        height: math.max(4.0, h * 0.09),
+      );
+      canvas.drawRRect(RRect.fromRectAndRadius(spoilerRect, const Radius.circular(2)), spoilerPaint);
 
-    // 9. Continuous Glowing LED Taillight Light Bar
+      // Endplates
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(-spoilerWidth / 2, -h * 0.22), width: w * 0.035, height: h * 0.20),
+          const Radius.circular(1),
+        ),
+        spoilerPaint,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(spoilerWidth / 2, -h * 0.22), width: w * 0.035, height: h * 0.20),
+          const Radius.circular(1),
+        ),
+        spoilerPaint,
+      );
+    } else {
+      // Exotic Supercar integrated Ducktail Spoiler
+      final ducktailPath = Path()
+        ..moveTo(-w * 0.44, -h * 0.10)
+        ..quadraticBezierTo(0, -h * 0.18, w * 0.44, -h * 0.10)
+        ..lineTo(w * 0.42, -h * 0.06)
+        ..quadraticBezierTo(0, -h * 0.14, -w * 0.42, -h * 0.06)
+        ..close();
+      canvas.drawPath(ducktailPath, spoilerPaint);
+    }
+
+    // 10. Glowing LED Taillight Light Bar
     final tailColor = isBraking ? const Color(0xFFFF1744) : const Color(0xFFFF2B3C);
     final tailPaint = Paint()
       ..color = tailColor
@@ -272,30 +347,59 @@ abstract class CarBase extends PositionComponent {
       ..close();
     canvas.drawPath(tailPath, tailPaint);
 
-    // Inner Radiant Core
     final coreTailPaint = Paint()..color = isBraking ? const Color(0xFFFFF59D) : const Color(0xFFFFCDD2);
     canvas.drawPath(tailPath, coreTailPaint);
 
-    // 10. Dual Titanium Exhaust Ports with Glowing Heat Rings
-    final exL = Offset(-w * 0.22, h * 0.37);
-    final exR = Offset(w * 0.22, h * 0.37);
-    final exRadius = math.max(3.5, w * 0.052);
-
+    // 11. Custom Exhaust Layouts (Single Titanium / Dual / Quad)
     final exhaustOuterPaint = Paint()..color = const Color(0xFF455A64);
     final exhaustInnerPaint = Paint()..color = const Color(0xFF0F172A);
 
-    canvas.drawCircle(exL, exRadius, exhaustOuterPaint);
-    canvas.drawCircle(exL, exRadius * 0.70, exhaustInnerPaint);
-    canvas.drawCircle(exR, exRadius, exhaustOuterPaint);
-    canvas.drawCircle(exR, exRadius * 0.70, exhaustInnerPaint);
+    if (bodyStyle == CarBodyStyle.jdmRotary) {
+      // Single Large JDM Titanium Cannon on Right side
+      final ex = Offset(w * 0.28, h * 0.38);
+      final exRad = math.max(4.5, w * 0.075);
+      canvas.drawCircle(ex, exRad, exhaustOuterPaint);
+      canvas.drawCircle(ex, exRad * 0.72, exhaustInnerPaint);
+      if (isNitroActive) {
+        final nitroGlow = Paint()
+          ..color = const Color(0xFF00E5FF)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+        canvas.drawCircle(ex, exRad * 2.2, nitroGlow);
+      }
+    } else if (bodyStyle == CarBodyStyle.exoticSuper) {
+      // Center-mounted Dual Hexagonal / Triangular Ports
+      final exC1 = Offset(-w * 0.08, h * 0.28);
+      final exC2 = Offset(w * 0.08, h * 0.28);
+      final exRad = math.max(3.5, w * 0.05);
+      canvas.drawCircle(exC1, exRad, exhaustOuterPaint);
+      canvas.drawCircle(exC1, exRad * 0.70, exhaustInnerPaint);
+      canvas.drawCircle(exC2, exRad, exhaustOuterPaint);
+      canvas.drawCircle(exC2, exRad * 0.70, exhaustInnerPaint);
+      if (isNitroActive) {
+        final nitroGlow = Paint()
+          ..color = const Color(0xFF00E5FF)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        canvas.drawCircle(exC1, exRad * 1.8, nitroGlow);
+        canvas.drawCircle(exC2, exRad * 1.8, nitroGlow);
+      }
+    } else {
+      // Dual Outer Ports (Left & Right)
+      final exL = Offset(-w * 0.22, h * 0.37);
+      final exR = Offset(w * 0.22, h * 0.37);
+      final exRadius = math.max(3.5, w * 0.052);
 
-    // Nitro exhaust ring glow
-    if (isNitroActive) {
-      final nitroGlow = Paint()
-        ..color = const Color(0xFF00E5FF)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-      canvas.drawCircle(exL, exRadius * 1.7, nitroGlow);
-      canvas.drawCircle(exR, exRadius * 1.7, nitroGlow);
+      canvas.drawCircle(exL, exRadius, exhaustOuterPaint);
+      canvas.drawCircle(exL, exRadius * 0.70, exhaustInnerPaint);
+      canvas.drawCircle(exR, exRadius, exhaustOuterPaint);
+      canvas.drawCircle(exR, exRadius * 0.70, exhaustInnerPaint);
+
+      if (isNitroActive) {
+        final nitroGlow = Paint()
+          ..color = const Color(0xFF00E5FF)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        canvas.drawCircle(exL, exRadius * 1.7, nitroGlow);
+        canvas.drawCircle(exR, exRadius * 1.7, nitroGlow);
+      }
     }
 
     canvas.restore();

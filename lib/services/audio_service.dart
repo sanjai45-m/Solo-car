@@ -149,6 +149,41 @@ class AudioService {
     } catch (_) {}
   }
 
+  Future<void> playEmpSound() async {
+    if (_soundVolume <= 0.05) return;
+    try {
+      await _sfxPlayer.setVolume(_soundVolume);
+    } catch (_) {}
+  }
+
+  Future<void> playShieldSound() async {
+    if (_soundVolume <= 0.05) return;
+    try {
+      await _sfxPlayer.setVolume(_soundVolume);
+    } catch (_) {}
+  }
+
+  Future<void> playMineDeploySound() async {
+    if (_soundVolume <= 0.05) return;
+    try {
+      await _sfxPlayer.setVolume(_soundVolume * 0.85);
+    } catch (_) {}
+  }
+
+  Future<void> playExplosionSound() async {
+    if (_soundVolume <= 0.05) return;
+    try {
+      await _sfxPlayer.setVolume(_soundVolume);
+    } catch (_) {}
+  }
+
+  Future<void> playPoliceSirenSound() async {
+    if (_soundVolume <= 0.05) return;
+    try {
+      await _sfxPlayer.setVolume(_soundVolume * 0.75);
+    } catch (_) {}
+  }
+
   void updateEnginePitch(double speedRatio) {
     if (_soundVolume <= 0) return;
     final playbackRate = (0.7 + speedRatio * 1.5).clamp(0.5, 2.0);
