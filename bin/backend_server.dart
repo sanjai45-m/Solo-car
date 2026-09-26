@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 
-const int port = 8088;
+final int port = int.tryParse(Platform.environment['PORT'] ?? '') ?? 8088;
 const String senderGmail = 'sanjaim202@gmail.com';
 const String appPassword = 'xptaynwalcovoqtj';
 
@@ -15,8 +15,8 @@ final Map<WebSocket, String> socketToUid = {};
 
 void main() async {
   final server = await HttpServer.bind(InternetAddress.anyIPv4, port);
-  print('🚀 Apex Velocity Backend Server (HTTP + WebSocket) running on http://127.0.0.1:$port');
-  print('⚡ Real-time Multiplayer WebSocket endpoint ready at ws://127.0.0.1:$port/ws');
+  print('🚀 Apex Velocity Backend Server (HTTP + WebSocket) running on port $port');
+  print('⚡ Real-time Multiplayer WebSocket endpoint ready at /ws');
 
   await for (HttpRequest request in server) {
     // Add CORS headers for web browser requests
