@@ -449,7 +449,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildCarShowroomStage(dynamic currentCar) {
+  Widget _buildCarShowroomStage(CarModel currentCar) {
     return GlassContainer(
       borderRadius: 16.0,
       backgroundColor: const Color(0xCC090F1C),
@@ -511,7 +511,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
                   border: Border.all(color: currentCar.neonUnderglowColor, width: 1.2),
                 ),
                 child: Text(
-                  currentCar.carClass.name.toUpperCase(),
+                  currentCar.carClass.toString().split('.').last.toUpperCase(),
                   style: GoogleFonts.orbitron(
                     fontSize: 10,
                     fontWeight: FontWeight.w900,

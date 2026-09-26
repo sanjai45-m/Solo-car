@@ -47,6 +47,8 @@ class UserProfile {
       ? (totalMultiplayerWins / totalMultiplayerRaces) * 100
       : 0.0;
 
+  double get winRatePercent => winRate;
+
   UserProfile copyWith({
     String? uid,
     String? displayName,
