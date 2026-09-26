@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../game/graphics/car_3d_renderer.dart';
 import '../models/car_model.dart';
 import '../services/game_controller.dart';
 import '../widgets/common/app_background.dart';
@@ -148,36 +149,14 @@ class _GarageScreenState extends State<GarageScreen> {
                                     });
                                   },
                                   child: Container(
-                                    height: 220,
+                                    height: 240,
                                     alignment: Alignment.center,
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        // Turntable shadow & glow
-                                        Container(
-                                          width: 260,
-                                          height: 100,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: selectedCar.neonUnderglowColor.withValues(alpha: 0.3),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: selectedCar.neonUnderglowColor.withValues(alpha: 0.4),
-                                                blurRadius: 40,
-                                                spreadRadius: 10,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        // Render Vector Car Preview with angle
-                                        CustomPaint(
-                                          size: const Size(120, 200),
-                                          painter: _CarShowcasePainter(
-                                            car: selectedCar,
-                                            rotationAngle: _carRotationAngle,
-                                          ),
-                                        ),
-                                      ],
+                                    child: CustomPaint(
+                                      size: const Size(280, 210),
+                                      painter: _CarShowcasePainter(
+                                        car: selectedCar,
+                                        rotationAngle: _carRotationAngle,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -612,201 +591,15 @@ class _CarShowcasePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    const w = 65.0;
-    const h = 135.0;
-
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(rotationAngle);
-
-    // 1. Neon Underglow
-    final glowPaint = Paint()
-      ..color = car.neonUnderglowColor.withValues(alpha: 0.65)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset.zero, width: w + 18, height: h + 18),
-        const Radius.circular(22),
-      ),
-      glowPaint,
+    Car3DRenderer.render3DShowcase(
+      canvas: canvas,
+      size: size,
+      car: car,
+      yawAngle: rotationAngle,
+      pitchAngle: 0.22,
+      bounceY: 0.0,
+      glowPulse: 1.0,
     );
-
-    // 2. Wide Racing Tires
-    final tirePaint = Paint()..color = const Color(0xFF141414);
-    final rimPaint = Paint()..color = const Color(0xFFB0BEC5);
-    final isWidebody = car.bodyStyle == CarBodyStyle.muscleGtr || car.bodyStyle == CarBodyStyle.leMansHypercar;
-    final tireW = isWidebody ? 12.0 : 10.0;
-
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(-w * 0.53, -h * 0.35, tireW, 24), const Radius.circular(3)), tirePaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.53 - tireW, -h * 0.35, tireW, 24), const Radius.circular(3)), tirePaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(-w * 0.53, h * 0.22, tireW, 24), const Radius.circular(3)), tirePaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.53 - tireW, h * 0.22, tireW, 24), const Radius.circular(3)), tirePaint);
-
-    // Rim Details
-    canvas.drawCircle(Offset(-w * 0.53 + tireW / 2, -h * 0.35 + 12), 2.5, rimPaint);
-    canvas.drawCircle(Offset(w * 0.53 - tireW / 2, -h * 0.35 + 12), 2.5, rimPaint);
-    canvas.drawCircle(Offset(-w * 0.53 + tireW / 2, h * 0.22 + 12), 2.5, rimPaint);
-    canvas.drawCircle(Offset(w * 0.53 - tireW / 2, h * 0.22 + 12), 2.5, rimPaint);
-
-    // 3. Unique Body Silhouette based on CarBodyStyle
-    final bodyPath = Path();
-    switch (car.bodyStyle) {
-      case CarBodyStyle.leMansHypercar:
-        // Prototype Le Mans hypercar with ultra-wide fenders and narrow teardrop cabin
-        bodyPath.moveTo(-w * 0.44, -h * 0.44);
-        bodyPath.quadraticBezierTo(0, -h * 0.56, w * 0.44, -h * 0.44);
-        bodyPath.lineTo(w * 0.54, -h * 0.30);
-        bodyPath.quadraticBezierTo(w * 0.42, 0, w * 0.54, h * 0.32);
-        bodyPath.lineTo(w * 0.46, h * 0.50);
-        bodyPath.quadraticBezierTo(0, h * 0.54, -w * 0.46, h * 0.50);
-        bodyPath.lineTo(-w * 0.54, h * 0.32);
-        bodyPath.quadraticBezierTo(-w * 0.42, 0, -w * 0.54, -h * 0.30);
-        bodyPath.close();
-        break;
-
-      case CarBodyStyle.exoticSuper:
-        // Wedge-shaped European exotic supercar
-        bodyPath.moveTo(-w * 0.38, -h * 0.50);
-        bodyPath.quadraticBezierTo(0, -h * 0.56, w * 0.38, -h * 0.50);
-        bodyPath.lineTo(w * 0.50, -h * 0.34);
-        bodyPath.quadraticBezierTo(w * 0.44, 0, w * 0.50, h * 0.34);
-        bodyPath.lineTo(w * 0.42, h * 0.48);
-        bodyPath.quadraticBezierTo(0, h * 0.50, -w * 0.42, h * 0.48);
-        bodyPath.lineTo(-w * 0.50, h * 0.34);
-        bodyPath.quadraticBezierTo(-w * 0.44, 0, -w * 0.50, -h * 0.34);
-        bodyPath.close();
-        break;
-
-      case CarBodyStyle.muscleGtr:
-        // Muscular squared shoulders and wide flared stance
-        bodyPath.moveTo(-w * 0.42, -h * 0.46);
-        bodyPath.quadraticBezierTo(0, -h * 0.50, w * 0.42, -h * 0.46);
-        bodyPath.lineTo(w * 0.52, -h * 0.32);
-        bodyPath.quadraticBezierTo(w * 0.46, 0, w * 0.52, h * 0.34);
-        bodyPath.lineTo(w * 0.46, h * 0.48);
-        bodyPath.quadraticBezierTo(0, h * 0.52, -w * 0.46, h * 0.48);
-        bodyPath.lineTo(-w * 0.52, h * 0.34);
-        bodyPath.quadraticBezierTo(-w * 0.46, 0, -w * 0.52, -h * 0.32);
-        bodyPath.close();
-        break;
-
-      case CarBodyStyle.jdmRotary:
-        // Streamlined JDM drift coupe with curved aerodynamic flares
-        bodyPath.moveTo(-w * 0.34, -h * 0.48);
-        bodyPath.quadraticBezierTo(0, -h * 0.54, w * 0.34, -h * 0.48);
-        bodyPath.lineTo(w * 0.48, -h * 0.34);
-        bodyPath.quadraticBezierTo(w * 0.40, 0, w * 0.48, h * 0.34);
-        bodyPath.lineTo(w * 0.40, h * 0.48);
-        bodyPath.quadraticBezierTo(0, h * 0.52, -w * 0.40, h * 0.48);
-        bodyPath.lineTo(-w * 0.48, h * 0.34);
-        bodyPath.quadraticBezierTo(-w * 0.40, 0, -w * 0.48, -h * 0.34);
-        bodyPath.close();
-        break;
-
-      case CarBodyStyle.streetTuner:
-      default:
-        bodyPath.moveTo(-w * 0.36, -h * 0.48);
-        bodyPath.quadraticBezierTo(0, -h * 0.54, w * 0.36, -h * 0.48);
-        bodyPath.lineTo(w * 0.48, -h * 0.36);
-        bodyPath.quadraticBezierTo(w * 0.42, 0, w * 0.48, h * 0.36);
-        bodyPath.lineTo(w * 0.42, h * 0.48);
-        bodyPath.quadraticBezierTo(0, h * 0.52, -w * 0.42, h * 0.48);
-        bodyPath.lineTo(-w * 0.48, h * 0.36);
-        bodyPath.quadraticBezierTo(-w * 0.42, 0, -w * 0.48, -h * 0.36);
-        bodyPath.close();
-        break;
-    }
-
-    // Body Paint with Dynamic Specular Reflection
-    final bodyPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Color.lerp(car.bodyColor, Colors.white, 0.30)!,
-          car.bodyColor,
-          Color.lerp(car.bodyColor, Colors.black, 0.40)!,
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(Rect.fromLTWH(-w / 2, -h / 2, w, h));
-    canvas.drawPath(bodyPath, bodyPaint);
-
-    // 4. Center Racing Stripes / Graphics
-    final stripePaint = Paint()..color = car.stripeColor.withValues(alpha: 0.85);
-    if (car.bodyStyle == CarBodyStyle.muscleGtr || car.bodyStyle == CarBodyStyle.streetTuner) {
-      canvas.drawRect(Rect.fromCenter(center: Offset(-w * 0.08, 0), width: w * 0.08, height: h * 0.84), stripePaint);
-      canvas.drawRect(Rect.fromCenter(center: Offset(w * 0.08, 0), width: w * 0.08, height: h * 0.84), stripePaint);
-    } else if (car.bodyStyle == CarBodyStyle.jdmRotary) {
-      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: w * 0.18, height: h * 0.84), stripePaint);
-    }
-
-    // 5. Cockpit Canopy & Windshield Glass
-    final glassPaint = Paint()..color = const Color(0xFF0F172A);
-    final windshieldPath = Path()
-      ..moveTo(-w * 0.30, -h * 0.22)
-      ..lineTo(w * 0.30, -h * 0.22)
-      ..lineTo(w * 0.24, -h * 0.04)
-      ..lineTo(-w * 0.24, -h * 0.04)
-      ..close();
-    canvas.drawPath(windshieldPath, glassPaint);
-
-    // Rear Window Glass
-    final rearGlassPath = Path()
-      ..moveTo(-w * 0.22, h * 0.18)
-      ..lineTo(w * 0.22, h * 0.18)
-      ..lineTo(w * 0.26, h * 0.32)
-      ..lineTo(-w * 0.26, h * 0.32)
-      ..close();
-    canvas.drawPath(rearGlassPath, glassPaint);
-
-    // Roof
-    final roofRect = Rect.fromCenter(center: Offset(0, h * 0.07), width: w * 0.48, height: h * 0.22);
-    canvas.drawRRect(RRect.fromRectAndRadius(roofRect, const Radius.circular(4)), Paint()..color = car.bodyColor.withValues(alpha: 0.85));
-
-    // 6. Central Le Mans Shark Fin
-    if (car.bodyStyle == CarBodyStyle.leMansHypercar) {
-      final finPath = Path()
-        ..moveTo(-2.0, -h * 0.05)
-        ..lineTo(2.0, -h * 0.05)
-        ..lineTo(2.0, h * 0.44)
-        ..lineTo(-2.0, h * 0.44)
-        ..close();
-      canvas.drawPath(finPath, Paint()..color = const Color(0xFF0F172A));
-      canvas.drawRect(Rect.fromCenter(center: Offset(0, h * 0.20), width: 3.0, height: h * 0.25), Paint()..color = car.neonUnderglowColor);
-    }
-
-    // 7. Dynamic Rear Spoilers
-    final spoilerPaint = Paint()..color = const Color(0xFF1E293B);
-    if (car.bodyStyle == CarBodyStyle.jdmRotary || car.bodyStyle == CarBodyStyle.muscleGtr || car.bodyStyle == CarBodyStyle.leMansHypercar) {
-      final spoilerWidth = (car.bodyStyle == CarBodyStyle.leMansHypercar) ? w * 0.98 : w * 0.90;
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(0, h * 0.44), width: spoilerWidth, height: 9), const Radius.circular(2)),
-        spoilerPaint,
-      );
-      // Wing endplates
-      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(-spoilerWidth / 2, h * 0.44), width: 4, height: 16), const Radius.circular(1)), Paint()..color = car.neonUnderglowColor);
-      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(spoilerWidth / 2, h * 0.44), width: 4, height: 16), const Radius.circular(1)), Paint()..color = car.neonUnderglowColor);
-    } else {
-      // Integrated Lip / Ducktail Spoiler
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(0, h * 0.45), width: w * 0.78, height: 6), const Radius.circular(2)),
-        spoilerPaint,
-      );
-    }
-
-    // 8. Front Headlights Projectors
-    final headlightPaint = Paint()..color = const Color(0xFFE0F7FA)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(Offset(-w * 0.28, -h * 0.44), 4, headlightPaint);
-    canvas.drawCircle(Offset(w * 0.28, -h * 0.44), 4, headlightPaint);
-
-    // 9. Rear Taillight Glow Bar
-    final tailPaint = Paint()
-      ..color = const Color(0xFFFF1744)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(0, h * 0.47), width: w * 0.65, height: 4), const Radius.circular(2)), tailPaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(0, h * 0.47), width: w * 0.65, height: 2), const Radius.circular(1)), Paint()..color = Colors.white);
-
-    canvas.restore();
   }
 
   @override

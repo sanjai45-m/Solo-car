@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../game/graphics/car_3d_renderer.dart';
 import '../models/car_model.dart';
 import '../models/race_model.dart';
 import '../models/user_profile.dart';
@@ -32,6 +33,7 @@ class MainMenuScreen extends StatefulWidget {
 class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStateMixin {
   late AnimationController _ambientController;
   late AnimationController _entranceController;
+  late AnimationController _turntableController;
   late Animation<double> _slideAnimation;
 
   @override
@@ -47,6 +49,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
       duration: const Duration(milliseconds: 900),
     )..forward();
 
+    _turntableController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 14),
+    )..repeat();
+
     _slideAnimation = CurvedAnimation(
       parent: _ambientController,
       curve: Curves.easeInOutSine,
@@ -59,6 +66,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
   void dispose() {
     _ambientController.dispose();
     _entranceController.dispose();
+    _turntableController.dispose();
     super.dispose();
   }
 
@@ -523,46 +531,25 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
           ),
           const SizedBox(height: 8),
 
-          // 3D Visual Turntable Stage with Floating Hover
+          // 3D Visual Turntable Stage with Live 3D Rotation & Floating Hover
           Expanded(
             flex: 5,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Ground Reflection Oval & Rotating Halo
-                AnimatedBuilder(
-                  animation: _slideAnimation,
-                  builder: (context, child) {
-                    return CustomPaint(
-                      size: const Size(280, 100),
-                      painter: _ShowroomTurntablePainter(
-                        glowColor: currentCar.neonUnderglowColor,
-                        pulse: _ambientController.value,
-                      ),
-                    );
-                  },
-                ),
+            child: AnimatedBuilder(
+              animation: Listenable.merge([_slideAnimation, _turntableController]),
+              builder: (context, _) {
+                final floatY = math.sin(_ambientController.value * math.pi) * 3.5;
+                final yaw = _turntableController.value * 2 * math.pi;
 
-                // 3D Car Vector Body with subtle gentle floating hover
-                AnimatedBuilder(
-                  animation: _slideAnimation,
-                  builder: (context, _) {
-                    final floatY = math.sin(_ambientController.value * math.pi) * 4.0;
-                    return Transform.translate(
-                      offset: Offset(0, -floatY),
-                      child: CustomPaint(
-                        size: const Size(190, 110),
-                        painter: _CarShowroomVectorPainter(
-                          bodyColor: currentCar.bodyColor,
-                          underglowColor: currentCar.neonUnderglowColor,
-                          stripeColor: currentCar.stripeColor,
-                          bodyStyle: currentCar.bodyStyle,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+                return CustomPaint(
+                  size: const Size(260, 160),
+                  painter: _Car3DShowroomPainter(
+                    car: currentCar,
+                    yawAngle: yaw,
+                    bounceY: floatY,
+                    glowPulse: _ambientController.value,
+                  ),
+                );
+              },
             ),
           ),
 
@@ -696,150 +683,37 @@ class _ShowroomTurntablePainter extends CustomPainter {
   bool shouldRepaint(covariant _ShowroomTurntablePainter oldDelegate) => true;
 }
 
-class _CarShowroomVectorPainter extends CustomPainter {
-  final Color bodyColor;
-  final Color underglowColor;
-  final Color stripeColor;
-  final CarBodyStyle bodyStyle;
+class _Car3DShowroomPainter extends CustomPainter {
+  final CarModel car;
+  final double yawAngle;
+  final double bounceY;
+  final double glowPulse;
 
-  _CarShowroomVectorPainter({
-    required this.bodyColor,
-    required this.underglowColor,
-    required this.stripeColor,
-    this.bodyStyle = CarBodyStyle.streetTuner,
+  _Car3DShowroomPainter({
+    required this.car,
+    required this.yawAngle,
+    this.bounceY = 0.0,
+    this.glowPulse = 1.0,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final center = Offset(w / 2, h * 0.50);
-
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-
-    // Wheels
-    final wheelPaint = Paint()..color = const Color(0xFF151515);
-    final rimPaint = Paint()..color = const Color(0xFFB0BEC5);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(-w * 0.38, h * 0.20), width: w * 0.18, height: h * 0.45), const Radius.circular(4)), wheelPaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(w * 0.38, h * 0.20), width: w * 0.18, height: h * 0.45), const Radius.circular(4)), wheelPaint);
-    canvas.drawCircle(Offset(-w * 0.38, h * 0.20), w * 0.05, rimPaint);
-    canvas.drawCircle(Offset(w * 0.38, h * 0.20), w * 0.05, rimPaint);
-
-    // 3D Chassis Body based on bodyStyle
-    final bodyPath = Path();
-    switch (bodyStyle) {
-      case CarBodyStyle.leMansHypercar:
-        bodyPath.moveTo(-w * 0.48, h * 0.24);
-        bodyPath.lineTo(-w * 0.44, h * 0.38);
-        bodyPath.lineTo(w * 0.44, h * 0.38);
-        bodyPath.lineTo(w * 0.48, h * 0.24);
-        bodyPath.lineTo(w * 0.42, -h * 0.10);
-        bodyPath.lineTo(w * 0.22, -h * 0.42);
-        bodyPath.lineTo(-w * 0.22, -h * 0.42);
-        bodyPath.lineTo(-w * 0.42, -h * 0.10);
-        bodyPath.close();
-        break;
-
-      case CarBodyStyle.exoticSuper:
-        bodyPath.moveTo(-w * 0.46, h * 0.22);
-        bodyPath.lineTo(-w * 0.42, h * 0.36);
-        bodyPath.lineTo(w * 0.42, h * 0.36);
-        bodyPath.lineTo(w * 0.46, h * 0.22);
-        bodyPath.lineTo(w * 0.40, -h * 0.10);
-        bodyPath.lineTo(w * 0.26, -h * 0.40);
-        bodyPath.lineTo(-w * 0.26, -h * 0.40);
-        bodyPath.lineTo(-w * 0.40, -h * 0.10);
-        bodyPath.close();
-        break;
-
-      case CarBodyStyle.muscleGtr:
-        bodyPath.moveTo(-w * 0.46, h * 0.20);
-        bodyPath.lineTo(-w * 0.44, h * 0.38);
-        bodyPath.lineTo(w * 0.44, h * 0.38);
-        bodyPath.lineTo(w * 0.46, h * 0.20);
-        bodyPath.lineTo(w * 0.42, -h * 0.08);
-        bodyPath.lineTo(w * 0.32, -h * 0.36);
-        bodyPath.lineTo(-w * 0.32, -h * 0.36);
-        bodyPath.lineTo(-w * 0.42, -h * 0.08);
-        bodyPath.close();
-        break;
-
-      case CarBodyStyle.jdmRotary:
-        bodyPath.moveTo(-w * 0.47, h * 0.22);
-        bodyPath.lineTo(-w * 0.40, h * 0.36);
-        bodyPath.lineTo(w * 0.40, h * 0.36);
-        bodyPath.lineTo(w * 0.47, h * 0.22);
-        bodyPath.lineTo(w * 0.38, -h * 0.10);
-        bodyPath.lineTo(w * 0.27, -h * 0.38);
-        bodyPath.lineTo(-w * 0.27, -h * 0.38);
-        bodyPath.lineTo(-w * 0.38, -h * 0.10);
-        bodyPath.close();
-        break;
-
-      case CarBodyStyle.streetTuner:
-      default:
-        bodyPath.moveTo(-w * 0.44, h * 0.22);
-        bodyPath.lineTo(-w * 0.40, h * 0.36);
-        bodyPath.lineTo(w * 0.40, h * 0.36);
-        bodyPath.lineTo(w * 0.44, h * 0.22);
-        bodyPath.lineTo(w * 0.38, -h * 0.10);
-        bodyPath.lineTo(w * 0.28, -h * 0.38);
-        bodyPath.lineTo(-w * 0.28, -h * 0.38);
-        bodyPath.lineTo(-w * 0.38, -h * 0.10);
-        bodyPath.close();
-        break;
-    }
-
-    final bodyPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Color.lerp(bodyColor, Colors.white, 0.3)!,
-          bodyColor,
-          Color.lerp(bodyColor, Colors.black, 0.4)!,
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromCenter(center: Offset.zero, width: w, height: h));
-    canvas.drawPath(bodyPath, bodyPaint);
-
-    // Racing Stripes
-    final stripePaint = Paint()..color = stripeColor.withValues(alpha: 0.85);
-    if (bodyStyle == CarBodyStyle.muscleGtr || bodyStyle == CarBodyStyle.streetTuner) {
-      canvas.drawRect(Rect.fromLTWH(-w * 0.06, -h * 0.37, w * 0.04, h * 0.72), stripePaint);
-      canvas.drawRect(Rect.fromLTWH(w * 0.02, -h * 0.37, w * 0.04, h * 0.72), stripePaint);
-    } else if (bodyStyle == CarBodyStyle.jdmRotary) {
-      canvas.drawRect(Rect.fromLTWH(-w * 0.04, -h * 0.37, w * 0.08, h * 0.72), stripePaint);
-    }
-
-    // Central Shark Fin (Le Mans)
-    if (bodyStyle == CarBodyStyle.leMansHypercar) {
-      canvas.drawRect(Rect.fromCenter(center: Offset(0, -h * 0.25), width: 4, height: h * 0.25), Paint()..color = const Color(0xFF0F172A));
-      canvas.drawRect(Rect.fromCenter(center: Offset(0, -h * 0.25), width: 2, height: h * 0.25), Paint()..color = underglowColor);
-    }
-
-    // GT Wing Spoiler
-    final spoilerPaint = Paint()..color = const Color(0xFF0F172A);
-    if (bodyStyle != CarBodyStyle.exoticSuper) {
-      final spoilerWidth = (bodyStyle == CarBodyStyle.leMansHypercar || bodyStyle == CarBodyStyle.jdmRotary) ? w * 0.94 : w * 0.85;
-      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(0, -h * 0.22), width: spoilerWidth, height: 6), const Radius.circular(2)), spoilerPaint);
-    }
-
-    // LED Taillights
-    final tailPaint = Paint()
-      ..color = const Color(0xFFFF1744)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(0, h * 0.05), width: w * 0.72, height: 5), const Radius.circular(2)), tailPaint);
-    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(0, h * 0.05), width: w * 0.72, height: 5), const Radius.circular(2)), Paint()..color = Colors.white);
-
-    canvas.restore();
+    Car3DRenderer.render3DShowcase(
+      canvas: canvas,
+      size: size,
+      car: car,
+      yawAngle: yawAngle,
+      pitchAngle: 0.18,
+      bounceY: bounceY,
+      glowPulse: glowPulse,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _CarShowroomVectorPainter oldDelegate) {
-    return oldDelegate.bodyColor != bodyColor ||
-        oldDelegate.underglowColor != underglowColor ||
-        oldDelegate.stripeColor != stripeColor ||
-        oldDelegate.bodyStyle != bodyStyle;
+  bool shouldRepaint(covariant _Car3DShowroomPainter oldDelegate) {
+    return oldDelegate.car != car ||
+        oldDelegate.yawAngle != yawAngle ||
+        oldDelegate.bounceY != bounceY ||
+        oldDelegate.glowPulse != glowPulse;
   }
 }

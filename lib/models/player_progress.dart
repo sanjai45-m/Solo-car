@@ -13,8 +13,8 @@ class PlayerProgress {
   const PlayerProgress({
     this.cash = 5000,
     this.reputationLevel = 1,
-    this.selectedCarId = 'phantom_gt',
-    this.unlockedCarIds = const ['phantom_gt'],
+    this.selectedCarId = 'inferno_x',
+    this.unlockedCarIds = const ['inferno_x'],
     this.unlockedTrackIds = const ['track_city_night'],
     this.trackBestTimesMs = const {},
     this.carUpgradeLevels = const {},
@@ -58,11 +58,11 @@ class PlayerProgress {
     return PlayerProgress(
       cash: json['cash'] as int? ?? 5000,
       reputationLevel: json['reputationLevel'] as int? ?? 1,
-      selectedCarId: json['selectedCarId'] as String? ?? 'phantom_gt',
+      selectedCarId: json['selectedCarId'] as String? ?? 'inferno_x',
       unlockedCarIds: (json['unlockedCarIds'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
-          ['phantom_gt'],
+          ['inferno_x'],
       unlockedTrackIds: (json['unlockedTrackIds'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
