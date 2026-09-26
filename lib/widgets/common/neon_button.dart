@@ -91,7 +91,10 @@ class _NeonButtonState extends State<NeonButton> with SingleTickerProviderStateM
             duration: const Duration(milliseconds: 180),
             width: widget.width,
             height: widget.height,
-            padding: widget.padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: widget.padding ??
+                (widget.height != null
+                    ? const EdgeInsets.symmetric(horizontal: 14, vertical: 3)
+                    : const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: widget.isSecondary

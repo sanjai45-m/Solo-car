@@ -319,7 +319,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
         text: 'Quick Race',
         subtitle: 'Single Player AI Duel',
         icon: Icons.play_arrow_rounded,
-        height: 48,
+        height: 52,
         primaryColor: const Color(0xFF00E5FF),
         onPressed: () {
           Navigator.push(
@@ -338,7 +338,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
         text: 'Online Multiplayer',
         subtitle: '1v1 Live Room & Cloud Match',
         icon: Icons.public_rounded,
-        height: 48,
+        height: 52,
         primaryColor: const Color(0xFF00E676),
         onPressed: () {
           Navigator.push(
@@ -355,7 +355,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
         text: 'Career Circuits',
         subtitle: 'Syndicate Campaign Tracks',
         icon: Icons.flag_rounded,
-        height: 44,
+        height: 48,
         isSecondary: true,
         primaryColor: const Color(0xFFFFD600),
         onPressed: () {
@@ -373,7 +373,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
         text: 'Garage & Tuning',
         subtitle: 'Custom Paint & Upgrades',
         icon: Icons.build_rounded,
-        height: 44,
+        height: 48,
         isSecondary: true,
         primaryColor: const Color(0xFFFF007F),
         onPressed: () {
@@ -391,7 +391,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
         text: 'Leaderboard',
         subtitle: 'Global ELO & Podium Ranks',
         icon: Icons.leaderboard_rounded,
-        height: 44,
+        height: 48,
         isSecondary: true,
         primaryColor: const Color(0xFFFF9100),
         onPressed: () {
@@ -407,7 +407,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
         text: 'Settings',
         subtitle: 'Controls & Audio Calibration',
         icon: Icons.settings_rounded,
-        height: 44,
+        height: 48,
         isSecondary: true,
         primaryColor: const Color(0xFF90A4AE),
         onPressed: () {
