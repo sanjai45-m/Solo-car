@@ -1,39 +1,39 @@
 # ==============================================================================
 # 🏎️ Apex Velocity Backend Server Dockerfile
-# Multi-stage Ahead-Of-Time (AOT) Dart compilation for maximum performance & minimal image size
+# Pure Dart Multi-stage AOT native compilation
 # ==============================================================================
 
-# Stage 1: Build the AOT native server binary
+# Stage 1: Build the native server executable
 FROM dart:stable AS build
 
 WORKDIR /app
 
-# Cache dependencies
-COPY pubspec.yaml pubspec.lock* ./
+# Copy pure Dart server package and resolve dependencies
+COPY server/pubspec.yaml server/pubspec.lock* ./
 RUN dart pub get
 
-# Copy source and compile native executable
-COPY . .
-RUN dart compile exe bin/backend_server.dart -o bin/server
+# Copy server source code and compile native binary
+COPY server/ ./
+RUN dart compile exe bin/server.dart -o bin/server
 
 # ==============================================================================
-# Stage 2: Ultra-lightweight runtime image
+# Stage 2: Minimal runtime image
 # ==============================================================================
 FROM debian:bookworm-slim
 
-# Install SSL certificates for outbound SMTP/TLS connections
+# Install SSL root certificates for secure SMTP and HTTPS
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy compiled binary from builder
+# Copy compiled AOT binary from build stage
 COPY --from=build /app/bin/server /app/bin/server
 
-# Expose default HTTP/WebSocket port
+# Expose HTTP / WebSocket port
 ENV PORT=8088
 EXPOSE 8088
 
-# Run as non-root user
+# Run securely as non-root user
 USER nobody
 
 CMD ["/app/bin/server"]

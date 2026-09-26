@@ -1,0 +1,10 @@
+name: apex_velocity_server
+description: Real-time WebSocket and Mailer Backend for Apex Velocity Racing.
+version: 1.0.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  mailer: ^6.1.0
+  web_socket_channel: ^3.0.1
