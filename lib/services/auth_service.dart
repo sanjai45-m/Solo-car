@@ -112,15 +112,27 @@ class AuthService extends ChangeNotifier {
           scopes: ['email', 'profile'],
         );
       } else {
-        // Dedicated Google OAuth Android / Mobile Client ID
+        // On Android, serverClientId must be the Web Client ID for token exchange,
+        // while the Android client ID is verified via the registered SHA-1 fingerprint.
         _googleSignIn ??= GoogleSignIn(
-          serverClientId: '638423180265-9iclq3d50de0btf60j03c4cq5v0unnq6.apps.googleusercontent.com',
+          serverClientId: '638423180265-gsh54ui9q2dqshrtp6ubtc7qo4dt8t2j.apps.googleusercontent.com',
           scopes: ['email', 'profile'],
         );
       }
 
       // Trigger the real Google Sign-In account selector dialog / popup
-      final googleUser = await _googleSignIn!.signIn();
+      GoogleSignInAccount? googleUser;
+      try {
+        googleUser = await _googleSignIn!.signIn();
+      } catch (androidErr) {
+        debugPrint('Standard GoogleSignIn failed, trying basic profile scope fallback: $androidErr');
+        if (!kIsWeb) {
+          final fallbackSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+          googleUser = await fallbackSignIn.signIn();
+        } else {
+          rethrow;
+        }
+      }
       if (googleUser == null) {
         // User canceled the sign in dialog
         return _currentUser;

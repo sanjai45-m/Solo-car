@@ -11,7 +11,7 @@
 [![Platform](https://img.shields.io/badge/Platforms-Android%20%7C%20Web-00E5FF?style=for-the-badge)](https://apex-velocity-game.netlify.app)
 [![Netlify Status](https://img.shields.io/badge/Netlify-Deployed-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://apex-velocity-game.netlify.app)
 
-[🌐 Play on Web](https://apex-velocity-game.netlify.app) • [📲 Download Android APK](https://tmpfiles.org/dl/w3wOpafDwFgs/app-release.apk)
+[🌐 Play on Web](https://apex-velocity-game.netlify.app) • [📲 Download Android APK](https://tmpfiles.org/dl/wvwMpUfDit16/app-release.apk)
 
 </div>
 
@@ -136,7 +136,7 @@ flutter build apk --release
 ## 📥 Direct Downloads & Links
 
 - 🌐 **Live Web Application**: [https://apex-velocity-game.netlify.app](https://apex-velocity-game.netlify.app)
-- 📱 **Android Release APK**: [Download app-release.apk (55.1 MB)](https://tmpfiles.org/dl/w3wOpafDwFgs/app-release.apk)
+- 📱 **Android Release APK**: [Download app-release.apk (55.1 MB)](https://tmpfiles.org/dl/wvwMpUfDit16/app-release.apk)
 
 ---
 

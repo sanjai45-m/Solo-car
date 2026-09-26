@@ -105,35 +105,65 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    'APEX VELOCITY',
-                                    style: GoogleFonts.orbitron(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white,
-                                      letterSpacing: 2.5,
-                                      shadows: const [
-                                        Shadow(
-                                          color: Color(0xFF00E5FF),
-                                          blurRadius: 18,
-                                        ),
-                                      ],
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  margin: const EdgeInsets.only(right: 12),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFF00E5FF), width: 1.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF00E5FF).withValues(alpha: 0.5),
+                                        blurRadius: 12,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.asset(
+                                      'assets/images/app_logo_3d.jpg',
+                                      fit: BoxFit.cover,
                                     ),
                                   ),
                                 ),
-                                Text(
-                                  'STREET RACING SYNDICATE',
-                                  style: GoogleFonts.orbitron(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF00E5FF),
-                                    letterSpacing: 1.5,
+                                Flexible(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          'APEX VELOCITY',
+                                          style: GoogleFonts.orbitron(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                            letterSpacing: 2.5,
+                                            shadows: const [
+                                              Shadow(
+                                                color: Color(0xFF00E5FF),
+                                                blurRadius: 18,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        'STREET RACING SYNDICATE',
+                                        style: GoogleFonts.orbitron(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: const Color(0xFF00E5FF),
+                                          letterSpacing: 1.5,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],

@@ -527,13 +527,26 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 child: Row(
                   children: [
                     Container(
-                      width: 50,
-                      height: 50,
+                      width: 52,
+                      height: 52,
                       decoration: BoxDecoration(
-                        color: widget.gameController.currentCar.bodyColor,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF00E5FF), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
+                            blurRadius: 10,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
-                      child: const Icon(Icons.directions_car, color: Colors.white, size: 28),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.asset(
+                          'assets/images/app_logo_3d.jpg',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(

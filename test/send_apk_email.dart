@@ -15,14 +15,14 @@ void main() async {
         <div style="background-color: #131B2E; padding: 18px; border-radius: 12px; margin: 20px 0; border: 1px solid #00E5FF;">
           <p style="margin: 0 0 10px 0; color: #80D8FF; font-size: 14px;"><strong>⚡ High-Speed Direct Mirrors:</strong></p>
           <ul style="margin: 0; padding-left: 20px; color: #E0E0E0; font-size: 13px; line-height: 1.8;">
-            <li><strong>Direct APK Download (55.1 MB):</strong> <a href="https://tmpfiles.org/dl/w3wOpafDwFgs/app-release.apk" style="color: #00E5FF; font-weight: bold;">Click to Download APK</a></li>
-            <li><strong>Download Mirror Page:</strong> <a href="https://tmpfiles.org/w3wOpafDwFgs/app-release.apk" style="color: #FFD600;">tmpfiles.org/w3wOpafDwFgs/app-release.apk</a></li>
+            <li><strong>Direct APK Download (55.1 MB):</strong> <a href="https://tmpfiles.org/dl/wvwMpUfDit16/app-release.apk" style="color: #00E5FF; font-weight: bold;">Click to Download APK</a></li>
+            <li><strong>Download Mirror Page:</strong> <a href="https://tmpfiles.org/wvwMpUfDit16/app-release.apk" style="color: #FFD600;">tmpfiles.org/wvwMpUfDit16/app-release.apk</a></li>
             <li><strong>Live Web App:</strong> <a href="https://apex-velocity-game.netlify.app" style="color: #69F0AE;">https://apex-velocity-game.netlify.app</a></li>
           </ul>
         </div>
 
         <div style="text-align: center; margin: 25px 0;">
-          <a href="https://tmpfiles.org/dl/w3wOpafDwFgs/app-release.apk" style="display: inline-block; background-color: #00E5FF; color: #000000; font-weight: 900; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; letter-spacing: 1px; margin-right: 8px;">📲 DIRECT HIGH-SPEED DOWNLOAD</a>
+          <a href="https://tmpfiles.org/dl/wvwMpUfDit16/app-release.apk" style="display: inline-block; background-color: #00E5FF; color: #000000; font-weight: 900; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; letter-spacing: 1px; margin-right: 8px;">📲 DIRECT HIGH-SPEED DOWNLOAD</a>
           <a href="https://apex-velocity-game.netlify.app" style="display: inline-block; background-color: #FFD600; color: #000000; font-weight: 900; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; letter-spacing: 1px;">🌐 PLAY ON WEB</a>
         </div>
       </div>
