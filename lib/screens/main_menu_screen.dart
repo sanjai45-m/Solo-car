@@ -231,15 +231,28 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
                   );
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF131D2E),
                     borderRadius: BorderRadius.circular(10),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF262010),
+                        Color(0xFF0F0C05),
+                      ],
+                    ),
                     border: Border.all(color: const Color(0xFFFFD600), width: 1.2),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFFD600).withValues(alpha: 0.25),
-                        blurRadius: 8,
+                        color: Colors.black.withValues(alpha: 0.7),
+                        offset: const Offset(2, 3),
+                        blurRadius: 5,
+                      ),
+                      BoxShadow(
+                        color: const Color(0xFFFFD600).withValues(alpha: 0.3),
+                        offset: const Offset(-1, -1),
+                        blurRadius: 6,
                       ),
                     ],
                   ),
@@ -263,11 +276,30 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
 
               // Reputation
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
-                  color: const Color(0x990A101C),
                   borderRadius: BorderRadius.circular(10),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF24180E),
+                      Color(0xFF0F0A05),
+                    ],
+                  ),
                   border: Border.all(color: const Color(0xFFFF9100), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      offset: const Offset(2, 3),
+                      blurRadius: 5,
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFFFF9100).withValues(alpha: 0.25),
+                      offset: const Offset(-1, -1),
+                      blurRadius: 6,
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -288,11 +320,30 @@ class _MainMenuScreenState extends State<MainMenuScreen> with TickerProviderStat
 
               // Credits
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
-                  color: const Color(0x990A101C),
                   borderRadius: BorderRadius.circular(10),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF10281C),
+                      Color(0xFF06140D),
+                    ],
+                  ),
                   border: Border.all(color: const Color(0xFF00E676), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      offset: const Offset(2, 3),
+                      blurRadius: 5,
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFF00E676).withValues(alpha: 0.25),
+                      offset: const Offset(-1, -1),
+                      blurRadius: 6,
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [

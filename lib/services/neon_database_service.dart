@@ -495,17 +495,21 @@ class NeonDatabaseService {
     } catch (_) {
       // 2. Direct SMTP Fallback if backend server is running in-process or on native
       try {
-        final smtpSuccess = await sendEmailWithSmtp(
-          senderGmail: 'sanjaim202@gmail.com',
-          appPassword: 'xptaynwalcovoqtj',
-          recipientEmail: recipientEmail,
-          lobbyCode: lobbyCode,
-          senderName: senderName,
-          trackName: trackName,
-        );
-        if (smtpSuccess) {
-          liveApiDelivered = true;
-          apiMessageId = 'smtp_${DateTime.now().millisecondsSinceEpoch}';
+        const envSender = String.fromEnvironment('SENDER_GMAIL', defaultValue: '');
+        const envPass = String.fromEnvironment('GMAIL_APP_PASSWORD', defaultValue: '');
+        if (envSender.isNotEmpty && envPass.isNotEmpty) {
+          final smtpSuccess = await sendEmailWithSmtp(
+            senderGmail: envSender,
+            appPassword: envPass,
+            recipientEmail: recipientEmail,
+            lobbyCode: lobbyCode,
+            senderName: senderName,
+            trackName: trackName,
+          );
+          if (smtpSuccess) {
+            liveApiDelivered = true;
+            apiMessageId = 'smtp_${DateTime.now().millisecondsSinceEpoch}';
+          }
         }
       } catch (_) {}
     }

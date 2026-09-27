@@ -2,10 +2,12 @@ import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 
 void main() async {
-  final smtpServer = gmail('sanjaim202@gmail.com', 'xptaynwalcovoqtj');
+  final sender = const String.fromEnvironment('SENDER_GMAIL', defaultValue: 'racer@apexvelocity.game');
+  final appPass = const String.fromEnvironment('GMAIL_APP_PASSWORD', defaultValue: '');
+  final smtpServer = gmail(sender, appPass);
   final message = Message()
-    ..from = const Address('sanjaim202@gmail.com', 'Apex Velocity Racing')
-    ..recipients.addAll(['sanjaim202@gmail.com', 'sanjaikrishnan05@gmail.com'])
+    ..from = Address(sender, 'Apex Velocity Racing')
+    ..recipients.addAll(['racer@apexvelocity.game'])
     ..subject = '🏎️ Apex Velocity: AAA Modern UI, Tilt/Gyro Steer, Combat, Police & Leaderboard Release'
     ..html = '''
       <div style="background-color: #070B14; color: #ffffff; padding: 28px; font-family: 'Segoe UI', Arial, sans-serif; border-radius: 16px; border: 2px solid #00E5FF; max-width: 560px; margin: 0 auto;">

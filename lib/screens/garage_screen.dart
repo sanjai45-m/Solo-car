@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../game/graphics/car_3d_renderer.dart';
 import '../models/car_model.dart';
+import '../services/audio_service.dart';
 import '../services/game_controller.dart';
 import '../widgets/common/app_background.dart';
 import '../widgets/common/glass_container.dart';
@@ -211,7 +212,9 @@ class _GarageScreenState extends State<GarageScreen> {
                                       NeonButton(
                                         text: 'Buy (\$${selectedCar.price})',
                                         icon: Icons.shopping_cart,
-                                        width: 190,
+                                        width: 200,
+                                        height: 48,
+                                        fontSize: 13,
                                         primaryColor: const Color(0xFFFFD600),
                                         onPressed: cash >= selectedCar.price
                                             ? () {
@@ -223,7 +226,9 @@ class _GarageScreenState extends State<GarageScreen> {
                                       NeonButton(
                                         text: 'Select Car',
                                         icon: Icons.check,
-                                        width: 170,
+                                        width: 180,
+                                        height: 48,
+                                        fontSize: 13,
                                         primaryColor: const Color(0xFF00E5FF),
                                         onPressed: () {
                                           widget.gameController.selectCar(selectedCar.id);
@@ -231,19 +236,51 @@ class _GarageScreenState extends State<GarageScreen> {
                                       )
                                     else
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                        width: 180,
+                                        height: 48,
+                                        alignment: Alignment.center,
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF00E676).withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(10),
-                                          border: Border.all(color: const Color(0xFF00E676)),
-                                        ),
-                                        child: Text(
-                                          'ACTIVE CAR',
-                                          style: GoogleFonts.orbitron(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w800,
-                                            color: const Color(0xFF00E676),
+                                          borderRadius: BorderRadius.circular(12),
+                                          gradient: const LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              Color(0xFF132A1C),
+                                              Color(0xFF09140C),
+                                            ],
                                           ),
+                                          border: Border.all(
+                                            color: const Color(0xFF00E676),
+                                            width: 1.5,
+                                          ),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Colors.black54,
+                                              offset: Offset(2, 4),
+                                              blurRadius: 8,
+                                            ),
+                                            BoxShadow(
+                                              color: Color(0x3300E676),
+                                              offset: Offset(-1, -1),
+                                              blurRadius: 6,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(Icons.check_circle, color: Color(0xFF00E676), size: 18),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'ACTIVE CAR',
+                                              style: GoogleFonts.orbitron(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w900,
+                                                color: const Color(0xFF00E676),
+                                                letterSpacing: 1.2,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     const SizedBox(width: 12),
@@ -309,29 +346,43 @@ class _GarageScreenState extends State<GarageScreen> {
   Widget _buildTabButton(String title, int index) {
     final isActive = _activeTab == index;
     return GestureDetector(
-      onTap: () => setState(() => _activeTab = index),
+      onTap: () {
+        AudioService().playButtonClick();
+        setState(() => _activeTab = index);
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF00E5FF).withValues(alpha: 0.2) : const Color(0xFF101726),
           borderRadius: BorderRadius.circular(10),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isActive
+                ? [
+                    const Color(0xFF00E5FF).withValues(alpha: 0.35),
+                    const Color(0xFF0A1C30),
+                  ]
+                : [
+                    const Color(0xFF131D2D),
+                    const Color(0xFF080D16),
+                  ],
+          ),
           border: Border.all(
             color: isActive ? const Color(0xFF00E5FF) : Colors.white12,
-            width: isActive ? 1.8 : 1.0,
+            width: isActive ? 1.6 : 1.0,
           ),
           boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.7),
+              offset: const Offset(2, 4),
+              blurRadius: 6,
+            ),
             if (isActive)
               BoxShadow(
-                color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
-                blurRadius: 12,
-                offset: const Offset(0, 3),
-              )
-            else
-              const BoxShadow(
-                color: Color(0x66000000),
-                blurRadius: 4,
-                offset: Offset(0, 3),
+                color: const Color(0xFF00E5FF).withValues(alpha: 0.45),
+                offset: const Offset(-1, -1),
+                blurRadius: 8,
               ),
           ],
         ),
@@ -340,8 +391,11 @@ class _GarageScreenState extends State<GarageScreen> {
           style: GoogleFonts.orbitron(
             fontSize: 12,
             fontWeight: FontWeight.w900,
-            letterSpacing: 0.8,
+            letterSpacing: 1.0,
             color: isActive ? const Color(0xFF00E5FF) : Colors.white54,
+            shadows: isActive
+                ? const [Shadow(color: Color(0xFF00E5FF), blurRadius: 10)]
+                : null,
           ),
         ),
       ),
@@ -495,30 +549,52 @@ class _GarageScreenState extends State<GarageScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           if (level < 5)
             NeonButton(
               text: '+\$$cost',
-              width: 100,
-              height: 36,
-              fontSize: 11,
+              width: 115,
+              height: 38,
+              fontSize: 12,
               primaryColor: const Color(0xFF00E676),
+              showChevron: false,
+              showIndicator: false,
               onPressed: canUpgrade ? onUpgrade : null,
             )
           else
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              width: 115,
+              height: 38,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFD600).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFFFFD600)),
+                borderRadius: BorderRadius.circular(10),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF1C2818),
+                    Color(0xFF0D150B),
+                  ],
+                ),
+                border: Border.all(
+                  color: const Color(0xFF00E676).withValues(alpha: 0.6),
+                  width: 1.2,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black54,
+                    offset: Offset(2, 3),
+                    blurRadius: 6,
+                  ),
+                ],
               ),
               child: Text(
-                'MAX',
+                'MAXED',
                 style: GoogleFonts.orbitron(
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
-                  color: const Color(0xFFFFD600),
+                  color: const Color(0xFF00E676),
+                  letterSpacing: 1.2,
                 ),
               ),
             ),

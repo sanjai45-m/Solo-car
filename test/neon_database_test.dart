@@ -12,9 +12,9 @@ void main() {
 
     // 2. Save a test racer profile
     final testProfile = UserProfile(
-      uid: 'test_racer_sanjai_01',
-      displayName: 'Sanjai Pro Racer',
-      email: 'sanjai@example.com',
+      uid: 'test_racer_pilot_01',
+      displayName: 'Apex Pro Racer',
+      email: 'pilot@example.com',
       photoUrl: null,
       isGuest: false,
       eloRating: 1350,
@@ -31,14 +31,14 @@ void main() {
     // 3. Test Leaderboard Retrieval
     final leaderboard = await neon.getGlobalLeaderboard(limit: 5);
     expect(leaderboard.isNotEmpty, isTrue);
-    expect(leaderboard.any((p) => p.uid == 'test_racer_sanjai_01'), isTrue);
+    expect(leaderboard.any((p) => p.uid == 'test_racer_pilot_01'), isTrue);
 
     // 4. Test Backend Email Dispatch & Invitation Logging
     final emailSent = await neon.sendEmailInvitation(
-      recipientEmail: 'friend@gmail.com',
+      recipientEmail: 'friend@example.com',
       lobbyCode: '7788',
-      senderName: 'Sanjai Pro Racer',
-      senderEmail: 'sanjai.m@gmail.com',
+      senderName: 'Apex Pro Racer',
+      senderEmail: 'pilot@example.com',
       trackName: 'Neon City Cyber Highway',
     );
     expect(emailSent, isTrue);

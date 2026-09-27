@@ -304,30 +304,20 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              SizedBox(
+              NeonButton(
+                text: 'SEND INVITE EMAIL',
+                icon: Icons.send_rounded,
                 width: double.infinity,
                 height: 48,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.send_rounded, color: Colors.black, size: 20),
-                  label: Text(
-                    'SEND INVITE EMAIL',
-                    style: GoogleFonts.orbitron(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00E5FF),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  onPressed: () {
-                    final email = emailController.text.trim();
-                    Navigator.pop(ctx);
-                    _sendInviteEmail(email, code);
-                  },
-                ),
+                fontSize: 12,
+                primaryColor: const Color(0xFF00E5FF),
+                showChevron: false,
+                showIndicator: false,
+                onPressed: () {
+                  final email = emailController.text.trim();
+                  Navigator.pop(ctx);
+                  _sendInviteEmail(email, code);
+                },
               ),
             ],
           ),
@@ -458,35 +448,28 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            SizedBox(
+            NeonButton(
+              text: 'SIGN IN / AUTHENTICATE RACER',
+              icon: Icons.flash_on,
               width: double.infinity,
               height: 50,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.flash_on, size: 24, color: Colors.black),
-                label: Text(
-                  'SIGN IN / AUTHENTICATE RACER',
-                  style: GoogleFonts.orbitron(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.black, letterSpacing: 0.8),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00E5FF),
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 6,
-                ),
-                onPressed: _openAuthModal,
-              ),
+              fontSize: 12,
+              primaryColor: const Color(0xFF00E5FF),
+              showChevron: false,
+              showIndicator: false,
+              onPressed: _openAuthModal,
             ),
             const SizedBox(height: 12),
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFFFB300),
-                side: const BorderSide(color: Color(0xFFFFB300)),
-              ),
+            NeonButton(
+              text: 'BACK TO SINGLE PLAYER QUICK RACE',
+              width: double.infinity,
+              height: 44,
+              fontSize: 11,
+              isSecondary: true,
+              primaryColor: const Color(0xFFFFB300),
+              showChevron: false,
+              showIndicator: false,
               onPressed: () => Navigator.pop(context),
-              child: Text(
-                'BACK TO SINGLE PLAYER QUICK RACE',
-                style: GoogleFonts.orbitron(fontSize: 10, fontWeight: FontWeight.bold),
-              ),
             ),
           ],
         ),
@@ -957,51 +940,49 @@ class _MultiplayerLobbyScreenState extends State<MultiplayerLobbyScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white70,
-                        side: const BorderSide(color: Colors.white24),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
+                    child: NeonButton(
+                      text: 'LEAVE LOBBY',
+                      icon: Icons.exit_to_app,
+                      height: 46,
+                      fontSize: 11,
+                      isSecondary: true,
+                      primaryColor: const Color(0xFFFF5252),
+                      showChevron: false,
+                      showIndicator: false,
                       onPressed: () => _multiplayerService.leaveRoom(),
-                      child: Text('LEAVE LOBBY', style: GoogleFonts.orbitron(fontSize: 11)),
                     ),
                   ),
                   const SizedBox(width: 12),
                   if (!isHost)
                     Expanded(
                       flex: 2,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: mySlot.isReady ? const Color(0xFFFFAB00) : const Color(0xFF00E676),
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
+                      child: NeonButton(
+                        text: mySlot.isReady ? 'NOT READY' : 'SET READY (1v1)',
+                        icon: mySlot.isReady ? Icons.close : Icons.check_circle_outline,
+                        height: 46,
+                        fontSize: 12,
+                        primaryColor: mySlot.isReady ? const Color(0xFFFFAB00) : const Color(0xFF00E676),
+                        showChevron: false,
+                        showIndicator: false,
                         onPressed: () {
                           if (currentUid != null) {
                             _multiplayerService.togglePlayerReady(currentUid, onAutoLaunch: _launchRace);
                           }
                         },
-                        child: Text(
-                          mySlot.isReady ? 'NOT READY' : 'SET READY (1v1)',
-                          style: GoogleFonts.orbitron(fontSize: 11, fontWeight: FontWeight.w900),
-                        ),
                       ),
                     )
                   else
                     Expanded(
                       flex: 2,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00E676),
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
+                      child: NeonButton(
+                        text: room.players.length >= 2 ? 'START 1v1 DUEL' : 'START PRACTICE (WAITING)',
+                        icon: Icons.sports_motorsports,
+                        height: 46,
+                        fontSize: 12,
+                        primaryColor: const Color(0xFF00E676),
+                        showChevron: false,
+                        showIndicator: false,
                         onPressed: _triggerStartCountdown,
-                        child: Text(
-                          room.players.length >= 2 ? 'START 1v1 DUEL' : 'START PRACTICE (WAITING)',
-                          style: GoogleFonts.orbitron(fontSize: 11, fontWeight: FontWeight.w900),
-                        ),
                       ),
                     ),
                 ],

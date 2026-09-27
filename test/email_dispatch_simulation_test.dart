@@ -15,8 +15,8 @@ void main() {
     test('1. Verify HTML Email Template Generation & Metadata Packaging', () {
       const recipient = 'racer.friend@gmail.com';
       const lobbyCode = '4920';
-      const senderName = 'Sanjai Pro Racer';
-      const senderEmail = 'sanjai.m@gmail.com';
+      const senderName = 'Apex Pro Racer';
+      const senderEmail = 'racer@apexvelocity.game';
       const trackName = 'Neon City Cyber Highway';
 
       final htmlBody = '''
@@ -78,10 +78,10 @@ void main() {
 
     test('3. Test Neon Cloud Database Audit & Persistent Queue for Email Dispatch', () async {
       final sent = await neonService.sendEmailInvitation(
-        recipientEmail: 'sanjai.m@gmail.com',
+        recipientEmail: 'friend@example.com',
         lobbyCode: '9182',
-        senderName: 'Sanjai M',
-        senderEmail: 'sanjai.m@gmail.com',
+        senderName: 'Apex Pro Racer',
+        senderEmail: 'racer@apexvelocity.game',
         trackName: 'Neon City Cyber Highway',
       );
 

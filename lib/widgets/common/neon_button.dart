@@ -1,10 +1,11 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/audio_service.dart';
 import '../../services/haptic_service.dart';
 
-/// Modern AAA Racing Game Action Tile with dynamic light sweep, chamfered cuts, and micro-press physics
+/// Next-Gen AAA Cyber-Neumorphic 3D Action Button
+/// Features convex metallic depth, dual specular highlights, extrusion drop shadows,
+/// tactile press physics, shimmer sweep, and auto-scaled zero-truncation typography.
 class NeonButton extends StatefulWidget {
   final String text;
   final String? subtitle;
@@ -16,6 +17,9 @@ class NeonButton extends StatefulWidget {
   final double fontSize;
   final bool isSecondary;
   final EdgeInsetsGeometry? padding;
+  final bool? showChevron;
+  final bool? showIndicator;
+  final MainAxisAlignment? contentAlignment;
 
   const NeonButton({
     super.key,
@@ -29,6 +33,9 @@ class NeonButton extends StatefulWidget {
     this.fontSize = 12,
     this.isSecondary = false,
     this.padding,
+    this.showChevron,
+    this.showIndicator,
+    this.contentAlignment,
   });
 
   @override
@@ -58,14 +65,21 @@ class _NeonButtonState extends State<NeonButton> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null;
-    final color = enabled ? widget.primaryColor : const Color(0xFF546E7A);
+    final color = enabled ? widget.primaryColor : const Color(0xFF455A64);
+    final hasSubtitle = widget.subtitle != null && widget.subtitle!.isNotEmpty;
+    final showChevron = widget.showChevron ?? hasSubtitle;
+    final showIndicator = widget.showIndicator ?? hasSubtitle;
+    final alignment = widget.contentAlignment ??
+        (hasSubtitle ? MainAxisAlignment.start : MainAxisAlignment.center);
 
     return MouseRegion(
       onEnter: (_) {
+        if (!enabled) return;
         setState(() => _isHovered = true);
         _shimmerController.forward(from: 0.0);
       },
       onExit: (_) {
+        if (!enabled) return;
         setState(() => _isHovered = false);
       },
       child: GestureDetector(
@@ -84,146 +98,262 @@ class _NeonButtonState extends State<NeonButton> with SingleTickerProviderStateM
             : null,
         onTapCancel: enabled ? () => setState(() => _isPressed = false) : null,
         child: AnimatedScale(
-          scale: _isPressed ? 0.96 : (_isHovered ? 1.02 : 1.0),
+          scale: _isPressed ? 0.965 : (_isHovered ? 1.02 : 1.0),
           duration: const Duration(milliseconds: 100),
           curve: Curves.easeOutCubic,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
+            duration: const Duration(milliseconds: 150),
             width: widget.width,
             height: widget.height,
             padding: widget.padding ??
-                (widget.height != null
-                    ? const EdgeInsets.symmetric(horizontal: 14, vertical: 3)
-                    : const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+                EdgeInsets.symmetric(
+                  horizontal: widget.width != null && widget.width! < 130 ? 8 : 14,
+                  vertical: 4,
+                ),
             decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              // Multi-tone Neumorphic 3D Surface Gradient (Consistent 3 Colors for AnimatedContainer lerp)
               gradient: LinearGradient(
-                colors: widget.isSecondary
-                    ? [
-                        const Color(0xFF0D1524).withValues(alpha: 0.92),
-                        const Color(0xFF070B12).withValues(alpha: 0.96),
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: !enabled
+                    ? const [
+                        Color(0xFF181F2C),
+                        Color(0xFF121722),
+                        Color(0xFF0C1017),
                       ]
-                    : [
-                        color.withValues(alpha: _isHovered ? 0.28 : 0.16),
-                        const Color(0xFF0A101C).withValues(alpha: 0.92),
-                      ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
+                    : _isPressed
+                        ? [
+                            const Color(0xFF080C14),
+                            color.withValues(alpha: 0.14),
+                            const Color(0xFF06090F),
+                          ]
+                        : widget.isSecondary
+                            ? [
+                                _isHovered
+                                    ? const Color(0xFF1E2B42)
+                                    : const Color(0xFF141C2B),
+                                const Color(0xFF0E1522),
+                                const Color(0xFF080D16),
+                              ]
+                            : [
+                                _isHovered
+                                    ? color.withValues(alpha: 0.40)
+                                    : color.withValues(alpha: 0.22),
+                                const Color(0xFF0D1422),
+                                const Color(0xFF080C14),
+                              ],
               ),
-              borderRadius: BorderRadius.circular(10),
+              // 3D Bevel Rim Border
               border: Border.all(
-                color: _isHovered
-                    ? color
-                    : (widget.isSecondary ? Colors.white12 : color.withValues(alpha: 0.45)),
-                width: _isHovered ? 1.6 : 1.0,
+                color: !enabled
+                    ? Colors.white10
+                    : _isPressed
+                        ? color.withValues(alpha: 0.8)
+                        : _isHovered
+                            ? color
+                            : widget.isSecondary
+                                ? color.withValues(alpha: 0.35)
+                                : color.withValues(alpha: 0.65),
+                width: _isHovered ? 1.6 : 1.2,
               ),
+              // Deep Neumorphic 3D Dual Shadows
               boxShadow: [
+                // Bottom-right dark extrusion shadow
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: _isPressed ? 0.4 : 0.85),
+                  offset: _isPressed ? const Offset(1, 2) : const Offset(3, 5),
+                  blurRadius: _isPressed ? 4 : 10,
+                  spreadRadius: 1,
+                ),
+                // Top-left specular 3D light reflection
+                if (enabled)
+                  BoxShadow(
+                    color: _isHovered
+                        ? color.withValues(alpha: 0.45)
+                        : (widget.isSecondary
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : color.withValues(alpha: 0.22)),
+                    offset: _isPressed ? const Offset(0, 0) : const Offset(-2, -2),
+                    blurRadius: _isHovered ? 10 : 5,
+                    spreadRadius: 0,
+                  ),
+                // Ambient glow around the button
                 if (enabled && _isHovered)
                   BoxShadow(
-                    color: color.withValues(alpha: 0.35),
-                    blurRadius: 16,
-                    spreadRadius: 1,
+                    color: color.withValues(alpha: 0.3),
+                    blurRadius: 18,
+                    spreadRadius: 2,
                   ),
-                const BoxShadow(
-                  color: Color(0x66000000),
-                  blurRadius: 6,
-                  offset: Offset(0, 3),
-                ),
               ],
             ),
-            child: Stack(
-              children: [
-                // Light Shimmer Sweep on hover
-                if (_isHovered && enabled)
-                  Positioned.fill(
-                    child: AnimatedBuilder(
-                      animation: _shimmerController,
-                      builder: (context, _) {
-                        return CustomPaint(
-                          painter: _ShimmerPainter(
-                            progress: _shimmerController.value,
-                            color: color,
-                          ),
-                        );
-                      },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(11),
+              child: Stack(
+                fit: StackFit.expand,
+                alignment: Alignment.center,
+                children: [
+                  // Top Surface Specular Gloss Arc
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: widget.height * 0.45,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.white.withValues(
+                              alpha: !enabled ? 0.03 : (_isHovered ? 0.20 : 0.10),
+                            ),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
                     ),
                   ),
 
-                Row(
-                  mainAxisSize: widget.width == null ? MainAxisSize.min : MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    // Left Chamfered Accent Indicator Bar
-                    Container(
-                      width: 3.5,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: _isHovered ? color : color.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(2),
-                        boxShadow: _isHovered
-                            ? [BoxShadow(color: color, blurRadius: 8, spreadRadius: 1)]
-                            : [],
+                  // Light Shimmer Sweep
+                  if (_isHovered && enabled)
+                    Positioned.fill(
+                      child: AnimatedBuilder(
+                        animation: _shimmerController,
+                        builder: (context, _) {
+                          return CustomPaint(
+                            painter: _ShimmerPainter(
+                              progress: _shimmerController.value,
+                              color: color,
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    const SizedBox(width: 10),
 
-                    // Icon
-                    if (widget.icon != null) ...[
-                      Icon(
-                        widget.icon,
-                        color: _isHovered ? color : Colors.white70,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 10),
-                    ],
-
-                    // Titles
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            widget.text.toUpperCase(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.orbitron(
-                              fontSize: widget.fontSize,
-                              fontWeight: FontWeight.w900,
-                              color: enabled ? Colors.white : Colors.white38,
-                              letterSpacing: 1.2,
-                              shadows: _isHovered
-                                  ? [Shadow(color: color, blurRadius: 10)]
-                                  : [],
+                  // Content Row
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: Row(
+                      mainAxisSize: widget.width == null ? MainAxisSize.min : MainAxisSize.max,
+                      mainAxisAlignment: alignment,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Left Glowing 3D Pill Bar
+                        if (showIndicator) ...[
+                          Container(
+                            width: 3.5,
+                            height: (widget.height * 0.48).clamp(16.0, 24.0),
+                            decoration: BoxDecoration(
+                              color: _isHovered ? color : color.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: color.withValues(alpha: _isHovered ? 0.8 : 0.4),
+                                  blurRadius: _isHovered ? 8 : 4,
+                                  spreadRadius: 1,
+                                ),
+                              ],
                             ),
                           ),
-                          if (widget.subtitle != null) ...[
-                            const SizedBox(height: 1),
-                            Text(
-                              widget.subtitle!.toUpperCase(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.rajdhani(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: _isHovered ? color : const Color(0xFF90A4AE),
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ],
+                          const SizedBox(width: 8),
                         ],
-                      ),
-                    ),
 
-                    // Right Arrow Chevrons
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: _isHovered ? color : Colors.white24,
-                      size: 12,
+                        // Leading Icon
+                        if (widget.icon != null) ...[
+                          Icon(
+                            widget.icon,
+                            color: !enabled
+                                ? Colors.white30
+                                : _isHovered
+                                    ? color
+                                    : (widget.isSecondary ? Colors.white70 : color),
+                            size: (widget.fontSize + 5).clamp(14.0, 22.0),
+                            shadows: enabled && _isHovered
+                                ? [Shadow(color: color, blurRadius: 10)]
+                                : [],
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+
+                        // Main Text & Optional Subtitle with Auto-Scaling (Never Truncates!)
+                        Flexible(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: hasSubtitle
+                                ? CrossAxisAlignment.start
+                                : CrossAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: hasSubtitle
+                                    ? Alignment.centerLeft
+                                    : Alignment.center,
+                                child: Text(
+                                  widget.text.toUpperCase(),
+                                  style: GoogleFonts.orbitron(
+                                    fontSize: widget.fontSize,
+                                    fontWeight: FontWeight.w900,
+                                    color: !enabled
+                                        ? Colors.white38
+                                        : Colors.white,
+                                    letterSpacing: widget.width != null && widget.width! < 120
+                                        ? 0.4
+                                        : 1.0,
+                                    shadows: enabled
+                                        ? [
+                                            const Shadow(
+                                              color: Color(0xCC000000),
+                                              offset: Offset(1, 2),
+                                              blurRadius: 3,
+                                            ),
+                                            if (_isHovered)
+                                              Shadow(
+                                                color: color,
+                                                blurRadius: 12,
+                                              ),
+                                          ]
+                                        : [],
+                                  ),
+                                ),
+                              ),
+                              if (hasSubtitle) ...[
+                                const SizedBox(height: 2),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    widget.subtitle!.toUpperCase(),
+                                    style: GoogleFonts.rajdhani(
+                                      fontSize: (widget.fontSize * 0.78).clamp(9.0, 12.0),
+                                      fontWeight: FontWeight.w700,
+                                      color: _isHovered
+                                          ? color
+                                          : const Color(0xFFA0B2C6),
+                                      letterSpacing: 0.6,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                        // Optional Right Chevron Arrow
+                        if (showChevron) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: _isHovered ? color : Colors.white24,
+                            size: (widget.fontSize * 0.85).clamp(10.0, 14.0),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -242,17 +372,19 @@ class _ShimmerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (progress <= 0.0 || progress >= 1.0) return;
 
-    final shimmerWidth = size.width * 0.4;
+    final shimmerWidth = size.width * 0.45;
     final startX = -shimmerWidth + (size.width + shimmerWidth * 2) * progress;
 
     final paint = Paint()
       ..shader = LinearGradient(
         colors: [
           Colors.transparent,
-          color.withValues(alpha: 0.18),
+          color.withValues(alpha: 0.25),
+          Colors.white.withValues(alpha: 0.35),
+          color.withValues(alpha: 0.25),
           Colors.transparent,
         ],
-        stops: const [0.0, 0.5, 1.0],
+        stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
       ).createShader(Rect.fromLTWH(startX, 0, shimmerWidth, size.height));
 
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);

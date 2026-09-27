@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/user_profile.dart';
 import '../../services/auth_service.dart';
+import '../common/neon_button.dart';
 
 class AuthDialog extends StatefulWidget {
   final VoidCallback onProfileChanged;
@@ -28,9 +29,6 @@ class _AuthDialogState extends State<AuthDialog> {
     if (!_profile.isGuest && _profile.email != null) {
       _emailController.text = _profile.email!;
       _nameController.text = _profile.displayName;
-    } else {
-      _emailController.text = 'sanjaim202@gmail.com';
-      _nameController.text = 'SanjaiRacer';
     }
   }
 
@@ -399,7 +397,7 @@ class _AuthDialogState extends State<AuthDialog> {
                         isDense: true,
                         filled: true,
                         fillColor: const Color(0xFF131B2E),
-                        hintText: 'Enter your Gmail (e.g. sanjaim202@gmail.com)',
+                        hintText: 'Enter your Gmail (e.g. racer@gmail.com)',
                         hintStyle: GoogleFonts.rajdhani(color: Colors.white38, fontSize: 12),
                         prefixIcon: const Icon(Icons.email, color: Color(0xFF00E5FF), size: 18),
                         border: OutlineInputBorder(
@@ -434,33 +432,22 @@ class _AuthDialogState extends State<AuthDialog> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
+                    const SizedBox(height: 14),
+                    NeonButton(
+                      text: 'SIGN IN & SYNC CLOUD PROFILE',
+                      icon: Icons.login_rounded,
                       width: double.infinity,
-                      height: 44,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.login, size: 18, color: Colors.black),
-                        label: Text(
-                          'SIGN IN & SYNC CLOUD PROFILE',
-                          style: GoogleFonts.orbitron(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00E5FF),
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          elevation: 4,
-                        ),
-                        onPressed: _handleEmailSignIn,
-                      ),
+                      height: 48,
+                      fontSize: 12,
+                      primaryColor: const Color(0xFF00E5FF),
+                      showChevron: false,
+                      showIndicator: false,
+                      onPressed: _handleEmailSignIn,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
               // OR divider
               Row(
@@ -473,32 +460,22 @@ class _AuthDialogState extends State<AuthDialog> {
                   const Expanded(child: Divider(color: Colors.white24)),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
               // Google OAuth One-Tap Popup Button
-              SizedBox(
+              NeonButton(
+                text: 'ONE-TAP GOOGLE POPUP SIGN IN',
+                icon: Icons.g_mobiledata_rounded,
                 width: double.infinity,
-                height: 42,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.g_mobiledata, size: 26, color: Color(0xFF4285F4)),
-                  label: Text(
-                    'ONE-TAP GOOGLE POPUP SIGN IN',
-                    style: GoogleFonts.orbitron(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      color: Colors.white,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF4285F4), width: 1.2),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    backgroundColor: const Color(0xFF4285F4).withValues(alpha: 0.1),
-                  ),
-                  onPressed: _handleGoogleSignIn,
-                ),
+                height: 48,
+                fontSize: 12,
+                isSecondary: true,
+                primaryColor: const Color(0xFF4285F4),
+                showChevron: false,
+                showIndicator: false,
+                onPressed: _handleGoogleSignIn,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Text(
                 'Cloud profile saves your ELO rating, trophies, and enables 1v1 live multiplayer racing on both Web & Mobile.',
                 textAlign: TextAlign.center,
@@ -509,32 +486,28 @@ class _AuthDialogState extends State<AuthDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFFFB300),
-                        side: const BorderSide(color: Color(0xFFFFB300)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
+                    child: NeonButton(
+                      text: 'PLAY AS GUEST',
+                      height: 44,
+                      fontSize: 11,
+                      isSecondary: true,
+                      primaryColor: const Color(0xFFFFB300),
+                      showChevron: false,
+                      showIndicator: false,
                       onPressed: _handleGuestSignIn,
-                      child: Text(
-                        'PLAY AS GUEST',
-                        style: GoogleFonts.orbitron(fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD32F2F),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
+                    child: NeonButton(
+                      text: 'SIGN OUT',
+                      height: 44,
+                      fontSize: 11,
+                      isSecondary: true,
+                      primaryColor: const Color(0xFFFF5252),
+                      showChevron: false,
+                      showIndicator: false,
                       onPressed: _handleSignOut,
-                      child: Text(
-                        'SIGN OUT',
-                        style: GoogleFonts.orbitron(fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
                     ),
                   ),
                 ],

@@ -5,8 +5,8 @@ import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 
 final int port = int.tryParse(Platform.environment['PORT'] ?? '') ?? 8088;
-const String senderGmail = 'sanjaim202@gmail.com';
-const String appPassword = 'xptaynwalcovoqtj';
+final String senderGmail = Platform.environment['SENDER_GMAIL'] ?? '';
+final String appPassword = Platform.environment['GMAIL_APP_PASSWORD'] ?? '';
 
 /// Active rooms and their connected client sockets: roomCode -> Set of WebSockets
 final Map<String, Set<WebSocket>> roomSockets = {};

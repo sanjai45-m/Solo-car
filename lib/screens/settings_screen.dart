@@ -164,7 +164,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                                 Switch(
                                   value: _hapticEnabled,
-                                  activeColor: const Color(0xFF00E5FF),
+                                  activeThumbColor: const Color(0xFF00E5FF),
                                   activeTrackColor: const Color(0xFF00E5FF).withValues(alpha: 0.3),
                                   onChanged: (val) {
                                     setState(() => _hapticEnabled = val);
@@ -227,24 +227,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
           duration: const Duration(milliseconds: 140),
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF00E5FF).withValues(alpha: 0.22) : const Color(0xFF10192A),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isSelected
+                  ? [
+                      const Color(0xFF00E5FF).withValues(alpha: 0.35),
+                      const Color(0xFF0A1828),
+                    ]
+                  : [
+                      const Color(0xFF141D2D),
+                      const Color(0xFF090E17),
+                    ],
+            ),
             border: Border.all(
               color: isSelected ? const Color(0xFF00E5FF) : Colors.white12,
-              width: isSelected ? 1.8 : 1.0,
+              width: isSelected ? 1.6 : 1.0,
             ),
             boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.75),
+                offset: const Offset(2, 4),
+                blurRadius: 6,
+              ),
               if (isSelected)
                 BoxShadow(
                   color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                )
-              else
-                const BoxShadow(
-                  color: Color(0x66000000),
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
+                  offset: const Offset(-1, -1),
+                  blurRadius: 8,
                 ),
             ],
           ),
@@ -254,8 +265,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: GoogleFonts.orbitron(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
+                letterSpacing: 0.8,
                 color: isSelected ? const Color(0xFF00E5FF) : Colors.white60,
+                shadows: isSelected
+                    ? const [Shadow(color: Color(0xFF00E5FF), blurRadius: 8)]
+                    : null,
               ),
             ),
           ),
